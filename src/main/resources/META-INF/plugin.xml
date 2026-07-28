@@ -1,0 +1,58 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <id>dev.gaphunter.refactorsimulator</id>
+    <name>Refactor Simulator</name>
+    <vendor>Gap Hunter Labs</vendor>
+    <description><![CDATA[
+        <p>Preview every refactoring before committing it. Simulates a rename or
+        extract refactor in an isolated in-memory sandbox — using IntelliJ's own
+        PSI and refactoring APIs, never a custom engine — and shows a full impact
+        report, validation results, and a side-by-side diff before anything
+        touches a real file.</p>
+        <p>Unlike the native preview dialog, everything stays isolated until you
+        explicitly choose Apply to Disk. Discard leaves the project exactly as it
+        was — no exceptions.</p>
+        <p>Free. No AI, no confidence scores, no probabilistic heuristics — every
+        reported number comes directly from Find Usages and IntelliJ's own
+        refactoring processors.</p>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <actions>
+        <group id="RefactorSimulator.Actions" text="Refactor Simulator" popup="true">
+            <action id="RefactorSimulator.Simulate"
+                    class="dev.gaphunter.refactorsimulator.actions.SimulateRefactorAction"
+                    text="Simulate Refactor..."
+                    description="Simulates a rename/extract refactor in an isolated sandbox, with a visual diff and impact report, before touching any real file"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="RefactoringMenu" anchor="last"/>
+        </group>
+    </actions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="dev.gaphunter.refactorsimulator.settings.RefactorSimulatorSettings"/>
+        <applicationConfigurable
+            parentId="tools"
+            instance="dev.gaphunter.refactorsimulator.settings.RefactorSimulatorConfigurable"
+            id="dev.gaphunter.refactorsimulator.settings.RefactorSimulatorConfigurable"
+            displayName="Refactor Simulator"/>
+        <toolWindow id="Refactor Simulator"
+                    anchor="right"
+                    factoryClass="dev.gaphunter.refactorsimulator.ui.ImpactToolWindowFactory"/>
+    </extensions>
+
+    <!-- Without this, the whole plugin silently fails to load under the Kotlin
+         plugin's K2 mode (the default since 2024.x), caught by a real runIde
+         run logging "incompatible with Kotlin in K2 mode", not by inspection.
+         Safe to support both: nothing here calls a resolve/analysis API that
+         differs between K1 and K2. RefactorSimulationRunner only drives
+         RenameProcessor/RenameUtil/findUsages(), all platform refactoring APIs,
+         not Kotlin-plugin-internal ones. Same gotcha already documented in
+         highlight-companion's plugin.xml. -->
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK1="true" supportsK2="true"/>
+    </extensions>
+</idea-plugin>
