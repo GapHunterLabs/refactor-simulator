@@ -4,6 +4,34 @@
 
 ## [Unreleased]
 
+## [0.1.1]
+
+### Fixed
+
+- `RefactorSimulationRunner` called `RenameProcessor.findUsages()` on an
+  externally-held instance — a method the platform marks
+  `@ApiStatus.OverrideOnly`. Replaced with `ReferencesSearch.search()`
+  (a genuinely public, unrestricted API with no such contract), which
+  finds the same references without violating platform API contracts.
+  `verifyPlugin` now reports Compatible with zero violations across all
+  6 target IDEs.
+- Fixed "Apply to Disk" showing a success message while writing nothing
+  to disk: `RenameProcessor(...).run()` was incorrectly nested inside a
+  manual `WriteCommandAction`, silently neutralizing the refactor.
+- Fixed "Apply to Disk" not persisting the rename to the real file on
+  disk: the rename ran but only mutated the in-memory `Document`;
+  affected documents are now explicitly saved after the refactor
+  completes.
+- Fixed Show Diff / Apply to Disk / Discard buttons having no
+  `ActionListener` wired up at all.
+- Fixed simulated diff text being identical to the original (a
+  placeholder that was never finished) — the diff now shows the real
+  post-rename text via `UsageInfo.getSegment()`.
+- Fixed the editor context-menu action resolving the wrong rename
+  target (e.g. a method's return type instead of the method itself).
+
+## [0.1.0]
+
 ### Added
 
 - Simulate Refactor: an isolated, in-memory sandbox preview of a rename
@@ -29,4 +57,6 @@
   ships Rename only.
 - MOVE refactoring isn't planned for v0.1 at all — see KNOWN_ISSUES.md.
 
-[Unreleased]: https://github.com/kendjm/refactor-simulator/commits/main
+[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.1.1...HEAD
+[0.1.1]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.1.0...0.1.1
+[0.1.0]: https://github.com/GapHunterLabs/refactor-simulator/commits/0.1.0
