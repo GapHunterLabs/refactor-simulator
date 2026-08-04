@@ -1,9 +1,11 @@
 package dev.gaphunter.refactorsimulator.apply
 
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.psi.PsiNamedElement
 import com.intellij.refactoring.rename.RenameProcessor
+import dev.gaphunter.refactorsimulator.refactor.RefactorKind
 import dev.gaphunter.refactorsimulator.refactor.SimulationResult
 import dev.gaphunter.refactorsimulator.sandbox.SandboxSession
 
@@ -51,8 +53,17 @@ import dev.gaphunter.refactorsimulator.sandbox.SandboxSession
 object ApplyToDiskAction {
 
     fun apply(session: SandboxSession, result: SimulationResult) {
+        when (result.kind) {
+            RefactorKind.RENAME -> applyRename(session, result)
+            RefactorKind.EXTRACT_VARIABLE -> applyComputedText(session, result)
+            RefactorKind.EXTRACT_FUNCTION -> error("Extract Function apply is not implemented yet")
+        }
+        session.dispose()
+    }
+
+    private fun applyRename(session: SandboxSession, result: SimulationResult) {
         val target = session.originalElement as? PsiNamedElement
-            ?: error("Apply target must be a PsiNamedElement")
+            ?: error("Rename apply target must be a PsiNamedElement")
 
         RenameProcessor(
             session.project,
@@ -63,7 +74,27 @@ object ApplyToDiskAction {
         ).run()
 
         saveAffectedDocuments(result)
-        session.dispose()
+    }
+
+    /**
+     * Extract Variable never calls a platform refactoring processor --
+     * [dev.gaphunter.refactorsimulator.refactor.RefactorSimulationRunner.simulateExtractVariable]
+     * already computed the exact resulting text, so Apply just writes
+     * that same text into the real file's Document. This guarantees the
+     * diff the user reviewed and the real edit can never diverge, the
+     * same "what you saw is what changed" principle [applyRename]
+     * relies on `RenameProcessor` itself to uphold.
+     */
+    private fun applyComputedText(session: SandboxSession, result: SimulationResult) {
+        val affectedFile = result.affectedFiles.singleOrNull()
+            ?: error("Extract Variable apply expects exactly one affected file")
+        val virtualFile = session.originalFile.virtualFile ?: return
+        val document = FileDocumentManager.getInstance().getDocument(virtualFile) ?: return
+
+        WriteCommandAction.runWriteCommandAction(session.project) {
+            document.setText(affectedFile.simulatedText)
+        }
+        FileDocumentManager.getInstance().saveDocument(document)
     }
 
     private fun saveAffectedDocuments(result: SimulationResult) {

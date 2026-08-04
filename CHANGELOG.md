@@ -4,6 +4,33 @@
 
 ## [Unreleased]
 
+## [0.2.0]
+
+### Added
+
+- Extract Variable: select an expression (`a + b`) and Simulate Refactor
+  now offers extracting it into a new `var`/`val` declared right before
+  the enclosing statement, replacing the exact selected occurrence with
+  the new name. Same "Simulate Refactor..." entry point as Rename — a
+  non-empty selection routes here, a caret on a name still routes to
+  Rename, unchanged. Apply to Disk writes the exact text the diff
+  showed (no platform refactoring processor involved for this one,
+  unlike Rename), so the real edit can never diverge from the preview.
+- Works for both Java and Kotlin, same as Rename.
+
+### Known gaps
+
+- Extract Function is not implemented in this release — parameter and
+  return-value inference for an arbitrary statement selection is a
+  meaningfully harder, still-undesigned problem than Extract Variable's
+  single-expression case, and this plugin's whole premise is accuracy
+  over speed of shipping. Tracked for a future release, not silently
+  dropped.
+- Extract Variable doesn't offer "replace all identical occurrences" or
+  detect a name collision with an existing local — only the exact
+  selected occurrence is replaced. v1 scope cut, same spirit as Rename
+  shipping before Extract in the first place.
+
 ## [0.1.1]
 
 ### Fixed
@@ -57,6 +84,7 @@
   ships Rename only.
 - MOVE refactoring isn't planned for v0.1 at all — see KNOWN_ISSUES.md.
 
-[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.1.1...HEAD
+[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/GapHunterLabs/refactor-simulator/commits/0.1.0

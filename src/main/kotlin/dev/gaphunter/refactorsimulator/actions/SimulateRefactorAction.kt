@@ -11,11 +11,19 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.util.PsiTreeUtil
+import dev.gaphunter.refactorsimulator.refactor.ExtractVariableTarget
 import dev.gaphunter.refactorsimulator.testimpact.RelatedTestFinder
 import dev.gaphunter.refactorsimulator.ui.ImpactToolWindowFactory
 
 /**
- * Editor context-menu + Refactor-menu entry point.
+ * Editor context-menu + Refactor-menu entry point. A non-empty editor
+ * selection that resolves to a real expression ([ExtractVariableTarget])
+ * routes to Extract Variable; otherwise this falls back to the original
+ * rename-at-caret behavior below, unchanged. Checking selection first
+ * means an accidental drag-selection over an identifier the user meant
+ * to rename never silently changes which refactor gets simulated --
+ * the two targets can't both resolve at once (rename needs a bare
+ * caret position, extract needs a real non-empty selection).
  *
  * Bug found and fixed via manual runIde verification (2026-07-28, see
  * KNOWN_ISSUES.md): the original implementation resolved the rename
@@ -45,13 +53,23 @@ class SimulateRefactorAction : AnAction() {
 
     override fun update(e: AnActionEvent) {
         val project = e.project
-        val target = findRenameTargetAtCaret(e)
-        e.presentation.isEnabledAndVisible =
-            project != null && !DumbService.isDumb(project) && target != null
+        val hasTarget = findExtractVariableTarget(e) != null || findRenameTargetAtCaret(e) != null
+        e.presentation.isEnabledAndVisible = project != null && !DumbService.isDumb(project) && hasTarget
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
+
+        val extractTarget = findExtractVariableTarget(e)
+        if (extractTarget != null) {
+            val dialog = SimulateExtractVariableDialog(project, extractTarget)
+            if (!dialog.showAndGet()) return
+            val session = dialog.session ?: return
+            val result = dialog.result ?: return
+            ImpactToolWindowFactory.showPanel(project)?.showSimulationResult(session, result, emptyList())
+            return
+        }
+
         val target = findRenameTargetAtCaret(e) ?: return
 
         val dialog = SimulateRefactorDialog(project, target)
@@ -61,6 +79,15 @@ class SimulateRefactorAction : AnAction() {
         val result = dialog.result ?: return
         val relatedTests = RelatedTestFinder.findRelatedTestFiles(target)
         ImpactToolWindowFactory.showPanel(project)?.showSimulationResult(session, result, relatedTests)
+    }
+
+    private fun findExtractVariableTarget(e: AnActionEvent): PsiElement? {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return null
+        val psiFile = e.getData(CommonDataKeys.PSI_FILE) ?: return null
+        if (!editor.selectionModel.hasSelection()) return null
+        val start = editor.selectionModel.selectionStart
+        val end = editor.selectionModel.selectionEnd
+        return ExtractVariableTarget.resolve(psiFile, start, end)
     }
 
     private fun findRenameTargetAtCaret(e: AnActionEvent): PsiNamedElement? {
