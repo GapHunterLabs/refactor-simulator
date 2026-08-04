@@ -420,6 +420,44 @@ correctly) gets harder to reason about — a MOVE's "minimal module
 subset" isn't as clearly bounded as a RENAME's. Revisit for v0.2 once
 v0.1's simpler refactor kinds have real usage to learn from.
 
+## Extract Variable's target resolution NPE'd on a real fixture, not a hand-built one (found and fixed, 2026-08-04)
+
+**What happened:** `ExtractVariableTarget.resolve()` walks up from the
+selection's start leaf, checking each ancestor's `textRange` against
+the selection bounds, stopping when `candidate` becomes `null` (which
+was assumed to happen right after the top-level `PsiFile`, the same
+way `SimulateRefactorAction`'s existing caret-walk assumes an eventual
+`null` parent). A real `BasePlatformTestCase` fixture testing "the
+selection doesn't line up with any expression" NPE'd instead of
+returning `null`.
+
+**Root cause:** `PsiFile.getParent()` does **not** return `null` — it
+returns the file's containing `PsiDirectory`. In a lightweight
+`myFixture.configureByText` test fixture specifically, that directory's
+own `getTextRange()` returns `null` (directories don't have "text" in
+any meaningful sense). The walk kept going past the file, hit that
+`null` range, and `range.getStartOffset()` NPE'd.
+
+**Fix:** two changes, not one — (1) `range` is now null-checked before
+being read at all (defensive, catches any other PSI element type with
+a null range, not just `PsiDirectory`), and (2) the walk explicitly
+stops the moment `candidate is PsiFile` — semantically correct anyway,
+since nothing above a file boundary could ever meaningfully match a
+text-offset-based selection.
+
+**Verified:** `./gradlew test` green, including the exact "no matching
+expression" case that originally NPE'd, plus a real leading+trailing
+whitespace-trimming case.
+
+**Lesson (generalizes the walk-up-the-tree pattern used twice now in
+this plugin, and once in `ansible-companion`'s completion contributor
+this same week):** never assume a PSI ancestor chain terminates at
+`null` right after the element type you're thinking about (a file, a
+statement, a sequence item) — verify what the *actual* next ancestor
+is and whether it has the property you're about to read, against a
+real fixture, not by reasoning about the platform's object model from
+memory.
+
 ## Licensing: `PRODUCT_CODE` is a format-valid placeholder, not a real code
 
 `future/v0.2-refactor-simulator-pro/licensing/RefactorSimulatorLicense.kt`

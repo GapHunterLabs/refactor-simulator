@@ -3,11 +3,14 @@ package dev.gaphunter.refactorsimulator.refactor
 import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNamedElement
+import com.intellij.psi.PsiStatement
 import com.intellij.psi.search.searches.ReferencesSearch
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.rename.RenameUtil
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.containers.MultiMap
 import dev.gaphunter.refactorsimulator.sandbox.SandboxSession
+import org.jetbrains.kotlin.psi.KtBlockExpression
 
 /**
  * Finds every real reference to the rename target and computes what the
@@ -84,6 +87,96 @@ object RefactorSimulationRunner {
             affectedFiles = affectedFiles,
             conflicts = conflicts,
         )
+    }
+
+    /**
+     * Extracts [expression] into a new local variable declared right
+     * before its enclosing statement, replacing the exact selected
+     * occurrence with [variableName] -- single file, single occurrence,
+     * no "replace all identical occurrences" and no naming-collision
+     * detection (documented v1 scope cuts, see README/KNOWN_ISSUES.md,
+     * same "declare it, don't silently guess more than what's there"
+     * spirit as [simulateRename]'s own scope). Uses `var`/`val`
+     * (Java/Kotlin) rather than inferring the expression's real type,
+     * sidestepping type-inference risk entirely -- both are always
+     * valid Kotlin, and `var` is valid Java 10+.
+     *
+     * This is pure text manipulation on the real file's already-loaded
+     * text, exactly like [applyRenameToText] -- never touches the real
+     * PSI tree or Document, and (unlike RENAME, which re-runs
+     * `RenameProcessor` for the real Apply) [ApplyToDiskAction] reuses
+     * this exact computed text for Apply too, so there's no risk of the
+     * real edit ever diverging from what the diff showed.
+     */
+    fun simulateExtractVariable(session: SandboxSession, variableName: String): SimulationResult? {
+        val expression = session.originalElement
+        val file = expression.containingFile ?: return null
+        val statement = enclosingStatement(expression) ?: return null
+
+        val isKotlin = expression.language.id == "kotlin"
+        val declarationKeyword = if (isKotlin) "val" else "var"
+        val terminator = if (isKotlin) "" else ";"
+
+        val originalText = file.text
+        val exprRange = expression.textRange
+        val statementStart = statement.textRange.startOffset
+        if (statementStart > exprRange.startOffset) return null
+        val indent = indentBefore(originalText, statementStart)
+        val expressionText = originalText.substring(exprRange.startOffset, exprRange.endOffset)
+
+        val builder = StringBuilder(originalText)
+        builder.replace(exprRange.startOffset, exprRange.endOffset, variableName)
+        builder.insert(statementStart, "$declarationKeyword $variableName = $expressionText$terminator\n$indent")
+
+        val affectedFile = AffectedFile(
+            filePath = file.virtualFile?.path ?: file.name,
+            originalText = originalText,
+            simulatedText = builder.toString(),
+            referenceCount = 1,
+            importCount = 0,
+        )
+
+        return SimulationResult(
+            kind = RefactorKind.EXTRACT_VARIABLE,
+            originalName = expressionText,
+            newName = variableName,
+            affectedFiles = listOf(affectedFile),
+            conflicts = emptyList(),
+        )
+    }
+
+    /**
+     * The nearest enclosing statement -- where the new declaration is
+     * inserted. Java: the nearest [PsiStatement] ancestor. Kotlin has no
+     * separate statement grammar (control-flow constructs are
+     * expressions too), so a "statement" is just the nearest ancestor
+     * whose own parent is a [KtBlockExpression] -- the element that is,
+     * itself, a direct entry in the enclosing block.
+     */
+    private fun enclosingStatement(expression: PsiElement): PsiElement? {
+        if (expression.language.id == "kotlin") {
+            var current: PsiElement? = expression
+            while (current != null) {
+                val parent = current.parent
+                if (parent is KtBlockExpression) return current
+                current = parent
+            }
+            return null
+        }
+        return PsiTreeUtil.getParentOfType(expression, PsiStatement::class.java)
+    }
+
+    /**
+     * The whitespace between the previous newline and [offset] -- used
+     * to indent the inserted declaration the same as the statement it's
+     * inserted before. Falls back to no indentation (rather than
+     * guessing) if that span isn't purely whitespace, e.g. the
+     * statement doesn't start its own line.
+     */
+    private fun indentBefore(text: String, offset: Int): String {
+        val lineStart = text.lastIndexOf('\n', (offset - 1).coerceAtLeast(0)) + 1
+        val prefix = text.substring(lineStart, offset)
+        return if (prefix.isBlank()) prefix else ""
     }
 
     /**

@@ -55,10 +55,16 @@ Every check is a real, verifiable platform fact, never a guess:
 
 ## Usage
 
-Right-click a symbol → **Simulate Refactor...** (or find it under the
-**Refactor** menu). Enter the new name — invalid identifiers and
-reserved keywords are rejected before simulation even runs, via the
-same `LanguageNamesValidation` the platform's own rename dialog uses.
+**Rename:** right-click a symbol → **Simulate Refactor...** (or find it
+under the **Refactor** menu). Enter the new name — invalid identifiers
+and reserved keywords are rejected before simulation even runs, via
+the same `LanguageNamesValidation` the platform's own rename dialog
+uses.
+
+**Extract Variable:** select an expression in the editor first, then
+**Simulate Refactor...** — the same entry point detects the selection
+and offers extracting it into a new `var`/`val` instead. Works for
+both Java and Kotlin.
 
 The **Refactor Simulator** tool window (right-hand side) shows:
 
