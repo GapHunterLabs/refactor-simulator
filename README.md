@@ -112,6 +112,11 @@ folder's own README for the full reasoning.
   silently-incomplete impact report is worse than declining the action
   for a few seconds.
 
+## Enterprise / Team Licensing
+
+Need enterprise features, custom refactoring rules, or team licensing?
+Contact us at **kennyj.diazm@gmail.com**.
+
 ## Development
 
 ```
