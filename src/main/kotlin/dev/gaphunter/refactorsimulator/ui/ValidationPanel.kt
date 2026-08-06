@@ -10,6 +10,11 @@ import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JPanel
 
+/** Fired when the user clicks "Will run" for [testFilePath] (an absolute path, same shape RelatedTestFinder returns). */
+fun interface WillRunListener {
+    fun onWillRun(testFilePath: String)
+}
+
 /**
  * Validation Report (left column) + Related Tests (right column, Pro
  * gate) side by side, per the mockup. Related Tests is always visible --
@@ -20,6 +25,9 @@ class ValidationPanel : JBPanel<ValidationPanel>(GridLayout(1, 2, 12, 0)) {
 
     private val validationColumn = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
     private val relatedTestsColumn = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
+
+    /** Set once by [dev.gaphunter.refactorsimulator.ui.ImpactPanel]; null means "no listener wired yet, ignore clicks." */
+    var willRunListener: WillRunListener? = null
 
     init {
         add(validationColumn)
@@ -57,7 +65,12 @@ class ValidationPanel : JBPanel<ValidationPanel>(GridLayout(1, 2, 12, 0)) {
             val row = JPanel().apply {
                 layout = BoxLayout(this, BoxLayout.X_AXIS)
                 add(wrappingLabel("✓ $fileName").apply { toolTipText = path })
-                add(JButton("Will run").apply { isEnabled = isPro })
+                add(
+                    JButton("Will run").apply {
+                        isEnabled = isPro
+                        addActionListener { willRunListener?.onWillRun(path) }
+                    },
+                )
             }
             relatedTestsColumn.add(row)
         }

@@ -21,6 +21,24 @@
     <depends>com.intellij.java</depends>
     <depends>org.jetbrains.kotlin</depends>
 
+    <!-- Freemium as of 0.3.0: PRODUCT_CODE assigned by JetBrains 2026-08-06
+         after enrolling in Marketplace Monetization. optional="true" means
+         the plugin still installs and works fully for free; only
+         "Will run" on a Related Test is gated, via
+         RefactorSimulatorLicense.isLicensed(). release-version must parse
+         as an integer with at least two digits (confirmed live: "03"
+         fails verifyPlugin with "format is invalid... at least two
+         digits" because the leading zero doesn't survive integer
+         parsing) while still matching the plugin version's own leading
+         digits; "003" keeps the same digit order as "0.3.0" (0, then
+         3) but padded to a width the parser can't collapse to a single
+         digit. Stays fixed as long as the plugin version starts with
+         "0.3", never touched again after this first release under it,
+         same discipline as
+         ansible-companion/api-security-companion/openapi-companion (see
+         INTELLIJ_PLATFORM_KNOWLEDGE.md, section 4.2). -->
+    <product-descriptor code="PREFACTORSIMULA" release-date="20260806" release-version="003" optional="true"/>
+
     <actions>
         <group id="RefactorSimulator.Actions" text="Refactor Simulator" popup="true">
             <action id="RefactorSimulator.Simulate"
@@ -33,7 +51,6 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="dev.gaphunter.refactorsimulator.settings.RefactorSimulatorSettings"/>
         <applicationConfigurable
             parentId="tools"
             instance="dev.gaphunter.refactorsimulator.settings.RefactorSimulatorConfigurable"

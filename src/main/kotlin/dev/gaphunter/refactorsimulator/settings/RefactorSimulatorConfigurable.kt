@@ -7,12 +7,12 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 
 /**
- * v0.1 has no configurable rules yet -- Simulate/Diff/Apply/Discard
- * aren't optional, and the only gated feature (Run Related Tests) isn't
- * wired to licensing until future/v0.2-refactor-simulator-pro/ is
- * reactivated. This page exists now so the applicationConfigurable
- * extension point + Settings > Tools entry are already correct, instead
- * of adding them later alongside real options.
+ * No configurable rules yet -- Simulate/Diff/Apply/Discard aren't
+ * optional, and licensing (Run Related Tests) is activated through
+ * JetBrains's own Register dialog, not a settings toggle here. This
+ * page exists so the applicationConfigurable extension point + Settings
+ * > Tools entry are already correct, instead of adding them later
+ * alongside real options.
  */
 class RefactorSimulatorConfigurable : Configurable {
 

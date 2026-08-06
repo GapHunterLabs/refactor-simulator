@@ -34,18 +34,12 @@ import java.util.Base64
  * them -> do not modify it when adapting this file, only PRODUCT_CODE is
  * project-specific.
  *
- * PRODUCT_CODE below is a FORMAT-VALID PLACEHOLDER, not a real assigned
- * code -- unlike Ansible Companion (already assigned a real code by
- * JetBrains after enrollment), Refactor Simulator has not applied to
- * Marketplace Monetization yet (see this folder's own README.md and
- * CONSTITUTION.md §4.1's Fase 4 entry: v0.1 ships Free, this gate
- * stays staged here until Fases 2-3 already in flight are resolved).
- * The real code is only assigned by JetBrains at enrollment time --
- * replace this placeholder then, don't guess a value now.
+ * PRODUCT_CODE is the real code JetBrains assigned after enrolling
+ * Refactor Simulator in Marketplace Monetization (Freemium), 2026-08-06.
  */
 object RefactorSimulatorLicense {
-    /** Must be the same value as plugin.xml's `<product-descriptor code="...">` tag, once added. */
-    private const val PRODUCT_CODE = "PREFACTORSIM"
+    /** Must be the same value as plugin.xml's `<product-descriptor code="...">` tag. */
+    private const val PRODUCT_CODE = "PREFACTORSIMULA"
 
     private const val KEY_PREFIX = "key:"
     private const val STAMP_PREFIX = "stamp:"
