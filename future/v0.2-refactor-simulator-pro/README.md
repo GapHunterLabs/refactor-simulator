@@ -10,9 +10,9 @@ differentiated versus anything else on Marketplace.
 ## Why this is staged here, not in `src/main`
 
 Unlike Ansible Companion (already enrolled in Marketplace Monetization,
-FREEMIUM, with a real assigned `[REDACTED-PRODUCT-CODE]` product code as of
-2026-07-23), **Refactor Simulator has not applied to Monetization at
-all.** Two reasons this waits:
+FREEMIUM, with a real assigned product code as of 2026-07-23),
+**Refactor Simulator has not applied to Monetization at all.** Two
+reasons this waits:
 
 1. `CONSTITUTION.md` §4.1 already has two active phases ahead of this
    one — Fase 2 (API Security Companion → Freemium, listing uploaded,

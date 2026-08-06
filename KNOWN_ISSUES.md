@@ -463,8 +463,8 @@ memory.
 `future/v0.2-refactor-simulator-pro/licensing/RefactorSimulatorLicense.kt`
 uses `PREFACTORSIM` as `PRODUCT_CODE` — this satisfies JetBrains's
 format rules (max 15 chars, starts with `P`, all caps, no digits/symbols)
-but is **not** an assigned code. Unlike Ansible Companion's
-`[REDACTED-PRODUCT-CODE]` (a real code JetBrains assigned after that plugin
-enrolled in Marketplace Monetization), Refactor Simulator hasn't applied
-to Monetization at all — see that folder's own README for why, and for
+but is **not** an assigned code. Unlike Ansible Companion (already
+assigned a real code by JetBrains after that plugin enrolled in
+Marketplace Monetization), Refactor Simulator hasn't applied to
+Monetization at all — see that folder's own README for why, and for
 the checklist to follow when it's time to actually apply.
