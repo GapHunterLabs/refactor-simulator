@@ -76,18 +76,17 @@ The **Refactor Simulator** tool window (right-hand side) shows:
   simulation already built).
 - **Show Diff / Apply to Disk / Discard.**
 
-**Free in v0.1:** simulation, the full Impact Summary, the Validation
+**Free, forever:** simulation, the full Impact Summary, the Validation
 Report, the native diff, listing related test files, and Apply/Discard
 — all of it, no paywall on any of the above.
 
-**Staged for a future paid tier, not yet available:** actually
-*executing* the related tests in an isolated sandbox (rather than just
-listing them). The code for this exists and is verified working (see
-`future/v0.2-refactor-simulator-pro/`), but it isn't wired into this
-release — Refactor Simulator hasn't applied to JetBrains Marketplace
-Monetization yet, and won't until the free tier has real usage and two
-other plugins already ahead in that queue are resolved. See that
-folder's own README for the full reasoning.
+**Pro (Freemium, as of 0.3.0):** actually *executing* the related tests
+— clicking "Will run" copies the affected module and everything that
+depends on it into an isolated temp directory (via
+`ModuleSourceRootResolver`) and runs them with the Gradle Tooling API,
+reusing the same temp dir/daemon across a session for speed. Requires a
+license; unlicensed installs still see the full related-test list, just
+with "Will run" disabled — nothing else in the plugin is gated.
 
 ## Why built this way
 

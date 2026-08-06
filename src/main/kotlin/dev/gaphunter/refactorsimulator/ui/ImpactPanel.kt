@@ -1,5 +1,8 @@
 package dev.gaphunter.refactorsimulator.ui
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.JBColor
@@ -9,10 +12,12 @@ import dev.gaphunter.refactorsimulator.apply.ApplyToDiskAction
 import dev.gaphunter.refactorsimulator.apply.DiscardAction
 import dev.gaphunter.refactorsimulator.diff.SimulationDiffPresenter
 import dev.gaphunter.refactorsimulator.impact.ImpactAnalyzer
+import dev.gaphunter.refactorsimulator.licensing.RefactorSimulatorLicense
 import dev.gaphunter.refactorsimulator.refactor.SimulationResult
 import dev.gaphunter.refactorsimulator.sandbox.SandboxSession
-import dev.gaphunter.refactorsimulator.settings.RefactorSimulatorSettings
 import dev.gaphunter.refactorsimulator.testimpact.IsolatedTestRunner
+import dev.gaphunter.refactorsimulator.testimpact.ModuleSourceRootResolver
+import dev.gaphunter.refactorsimulator.testimpact.TestStatus
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import javax.swing.BorderFactory
@@ -78,7 +83,44 @@ class ImpactPanel(private val project: Project) : JBPanel<ImpactPanel>(BorderLay
             reset()
         }
 
+        validationPanel.willRunListener = WillRunListener { testFilePath -> onWillRun(testFilePath) }
+
         setButtonsEnabled(false)
+    }
+
+    /**
+     * Gated on the real license, not the [dev.gaphunter.refactorsimulator.settings.RefactorSimulatorSettings]
+     * stub -- that field only controls whether "Will run" is enabled at
+     * all (see [showSimulationResult]); this is the second check right
+     * before actually spending the ~1s+ of a Gradle run, in case the
+     * license was revoked between render and click.
+     */
+    private fun onWillRun(testFilePath: String) {
+        val result = currentResult
+        if (result == null || RefactorSimulatorLicense.isLicensed() != true) {
+            RefactorSimulatorLicense.requestLicense("Running related tests in an isolated sandbox is part of Refactor Simulator Pro.")
+            return
+        }
+
+        object : Task.Backgroundable(project, "Running related test", true) {
+            override fun run(indicator: ProgressIndicator) {
+                val moduleSourceRoots = ModuleSourceRootResolver.resolveModuleSourceRoots(result, project)
+                val overrides = ModuleSourceRootResolver.buildOverrides(result, project, moduleSourceRoots)
+                val outcomes = testRunner.runRelatedTests(moduleSourceRoots, overrides)
+
+                ApplicationManager.getApplication().invokeLater {
+                    val outcome = outcomes?.firstOrNull { it.displayName.endsWith(testFilePath.substringAfterLast('/').substringAfterLast('\\').substringBefore(".")) }
+                    val message = when {
+                        outcomes == null -> "Could not prepare the isolated sandbox for this run."
+                        outcome == null -> "Ran ${outcomes.size} test(s); couldn't match one back to $testFilePath specifically -- see full output below.\n\n" +
+                            outcomes.joinToString("\n") { "${it.status}: ${it.displayName}" }
+                        outcome.status == TestStatus.PASS -> "✓ ${outcome.displayName} passed."
+                        else -> "${if (outcome.status == TestStatus.FAIL) "✗" else "⚠"} ${outcome.displayName}: ${outcome.status}\n\n${outcome.truncatedOutput ?: ""}"
+                    }
+                    Messages.showInfoMessage(project, message, "Refactor Simulator — Related Test Result")
+                }
+            }
+        }.queue()
     }
 
     fun showSimulationResult(session: SandboxSession, result: SimulationResult, relatedTestNames: List<String>) {
@@ -104,7 +146,7 @@ class ImpactPanel(private val project: Project) : JBPanel<ImpactPanel>(BorderLay
         summaryRow.repaint()
 
         validationPanel.showValidationReport(ImpactAnalyzer.buildValidationReport(result))
-        validationPanel.showRelatedTests(relatedTestNames, RefactorSimulatorSettings.getInstance().state.isPro)
+        validationPanel.showRelatedTests(relatedTestNames, RefactorSimulatorLicense.isLicensed() == true)
 
         setButtonsEnabled(true)
     }

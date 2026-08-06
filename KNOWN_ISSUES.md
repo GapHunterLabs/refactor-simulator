@@ -458,13 +458,60 @@ is and whether it has the property you're about to read, against a
 real fixture, not by reasoning about the platform's object model from
 memory.
 
-## Licensing: `PRODUCT_CODE` is a format-valid placeholder, not a real code
+## Licensing: `PRODUCT_CODE` is a format-valid placeholder, not a real code — RESOLVED 2026-08-06
 
-`future/v0.2-refactor-simulator-pro/licensing/RefactorSimulatorLicense.kt`
-uses `PREFACTORSIM` as `PRODUCT_CODE` — this satisfies JetBrains's
-format rules (max 15 chars, starts with `P`, all caps, no digits/symbols)
-but is **not** an assigned code. Unlike Ansible Companion (already
-assigned a real code by JetBrains after that plugin enrolled in
-Marketplace Monetization), Refactor Simulator hasn't applied to
-Monetization at all — see that folder's own README for why, and for
-the checklist to follow when it's time to actually apply.
+Was: `PREFACTORSIM`, a format-valid but unassigned placeholder, staged
+in `future/v0.2-refactor-simulator-pro/` while Refactor Simulator
+hadn't applied to Marketplace Monetization yet.
+
+Now: enrolled in Monetization (Freemium), JetBrains assigned the real
+code `PREFACTORSIMULA`. `RefactorSimulatorLicense.kt` moved to
+`src/main/.../licensing/`, `<product-descriptor>` added to `plugin.xml`,
+and the "Will run" button on a Related Test is gated on
+`RefactorSimulatorLicense.isLicensed()` — see CHANGELOG `[0.3.0]`.
+
+## `release-version` rejected by `verifyPlugin` for a major-0 plugin version — OPEN, blocked on JetBrains support (2026-08-06)
+
+Adding the `<product-descriptor>` above hit a second, unresolved
+problem: `verifyPlugin` rejects every `release-version` value tried so
+far, all with the identical error:
+
+```
+Invalid plugin descriptor 'plugin.xml'. The <release-version>
+parameter (NNN) format is invalid. Ensure it is an integer with at
+least two digits.
+```
+
+Tried, all failed identically: `"03"`, `"30"`, `"003"`. The plugin
+version is `0.3.0` (major `0`) — every value tried starts with a `0`
+once read as the leading digits of that version, and Marketplace's own
+docs describe the convention as "first digits of release-version must
+match the plugin version" without an example for a major-0 plugin (all
+worked examples in the docs use a 4-digit year as major, e.g.
+`2020.1.1` → `release-version="20201"`). Whether the Verifier
+specifically refuses a value it parses down to a single significant
+digit, or refuses any value starting with `0`, is not yet confirmed —
+three format variations were tried and none is proof of the actual
+rule.
+
+**Not resolved by guessing a fourth value.** Query sent to
+`marketplace@jetbrains.com` asking for the correct `release-version`
+convention for a plugin on pure SemVer with major `0`. Until that
+comes back:
+- `<product-descriptor code="PREFACTORSIMULA" release-date="20260806" release-version="003" optional="true"/>`
+  stays in `plugin.xml` as-is (the last value tried) — **do not
+  `publishPlugin` or trust a local `buildPlugin` output** until
+  `verifyPlugin` passes clean, since Marketplace's own upload gate is
+  at least as strict as the local Verifier.
+- The `test`/`buildPlugin` sides of the Freemium wiring (license check,
+  `ModuleSourceRootResolver`, the "Will run" button) are done and
+  verified — `./gradlew test` is green (18/18) and `./gradlew
+  buildPlugin` succeeds (after also disabling `buildSearchableOptions`,
+  see `INTELLIJ_PLATFORM_KNOWLEDGE.md` §4.5). Only `verifyPlugin`
+  itself is blocked.
+- The likely real fix, pending confirmation, is migrating `version` to
+  the same `YYYY.Minor.Patch` scheme already proven working for
+  ansible-companion/api-security-companion/openapi-companion (e.g.
+  `2026.1.0` → `release-version="20261"`) — not attempted yet because
+  it changes the plugin's whole versioning history and shouldn't be
+  done reactively while chasing a Verifier error.

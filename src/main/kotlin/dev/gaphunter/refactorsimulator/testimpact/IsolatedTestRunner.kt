@@ -43,9 +43,10 @@ import java.util.concurrent.TimeUnit
  *   unrelated.
  *
  * One [IsolatedTestRunner] instance is meant to be owned by
- * [dev.gaphunter.refactorsimulator.settings.RefactorSimulatorSettings]
- * or an equivalent per-project service, not constructed fresh per
- * simulation -- that's what makes the temp-dir reuse actually happen.
+ * [dev.gaphunter.refactorsimulator.ui.ImpactPanel] (one panel per tool
+ * window, one tool window per project) and reused across every
+ * simulation in that project, not constructed fresh per simulation --
+ * that's what makes the temp-dir reuse actually happen.
  */
 class IsolatedTestRunner(private val project: Project) {
 

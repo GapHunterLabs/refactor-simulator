@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Added
+
+- Refactor Simulator Pro (Freemium): "Will run" on a Related Test now
+  actually runs it, isolated in a temp copy of the affected module and
+  everything that depends on it (via a new `ModuleSourceRootResolver`),
+  using the same Gradle Tooling API runner staged since 0.1.0. Requires
+  a license — v0.1/0.2's free tier (Simulate, Diff, Impact Summary,
+  Validation Report, related-test *listing*, Apply/Discard) is
+  completely unaffected either way.
+
+[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.2.0...0.3.0
+
 ## [0.2.0]
 
 ### Added

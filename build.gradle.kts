@@ -54,3 +54,14 @@ intellijPlatform {
         )
     }
 }
+
+// As of the 0.3.0 Freemium product-descriptor, buildSearchableOptions can
+// no longer run headless (the platform requires presenting a real license
+// dialog it can't show without a display) -- it hangs indefinitely rather
+// than failing fast, confirmed by a real buildPlugin run. This plugin adds
+// no Settings/Configurable searchable strings that task would ever cover,
+// so disabling it costs nothing. Same fix the IntelliJ Platform Gradle
+// Plugin docs recommend for paid plugins.
+tasks.named("buildSearchableOptions") {
+    enabled = false
+}
