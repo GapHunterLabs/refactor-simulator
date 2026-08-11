@@ -1,10 +1,8 @@
 package dev.gaphunter.refactorsimulator.licensing
 
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionUiKind
-import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -151,10 +149,22 @@ object RefactorSimulatorLicense {
             registerAction = actionManager.getAction("Register")
         }
         if (registerAction != null) {
-            // This API is available starting from IDE version 243.*.
-            ActionUtil.performAction(
+            // Same API confirmed by ansible-companion's and
+            // api-security-companion's own ports (see ansible-companion's
+            // KNOWN_ISSUES.md "Round 7" for the full trail of two other
+            // candidates confirmed wrong by real verifyPlugin runs, and
+            // this plugin's own KNOWN_ISSUES.md for how performAction was
+            // caught failing against IU-243/IU-251 despite the comment it
+            // replaces claiming 243+ support): invokeAction is ActionUtil's
+            // own documented replacement for the deprecated Component-based
+            // overload, accepts DataContext, and isn't flagged
+            // Experimental/OverrideOnly/Internal.
+            ActionUtil.invokeAction(
                 registerAction,
-                AnActionEvent.createEvent(asDataContext(productCode, message), Presentation(), "", ActionUiKind.NONE, null),
+                asDataContext(productCode, message),
+                ActionPlaces.UNKNOWN,
+                null,
+                null,
             )
         }
     }

@@ -495,23 +495,74 @@ three format variations were tried and none is proof of the actual
 rule.
 
 **Not resolved by guessing a fourth value.** Query sent to
-`marketplace@jetbrains.com` asking for the correct `release-version`
-convention for a plugin on pure SemVer with major `0`. Until that
-comes back:
-- `<product-descriptor code="PREFACTORSIMULA" release-date="20260806" release-version="003" optional="true"/>`
-  stays in `plugin.xml` as-is (the last value tried) — **do not
-  `publishPlugin` or trust a local `buildPlugin` output** until
-  `verifyPlugin` passes clean, since Marketplace's own upload gate is
-  at least as strict as the local Verifier.
-- The `test`/`buildPlugin` sides of the Freemium wiring (license check,
-  `ModuleSourceRootResolver`, the "Will run" button) are done and
-  verified — `./gradlew test` is green (18/18) and `./gradlew
-  buildPlugin` succeeds (after also disabling `buildSearchableOptions`,
-  see `INTELLIJ_PLATFORM_KNOWLEDGE.md` §4.5). Only `verifyPlugin`
-  itself is blocked.
-- The likely real fix, pending confirmation, is migrating `version` to
-  the same `YYYY.Minor.Patch` scheme already proven working for
-  ansible-companion/api-security-companion/openapi-companion (e.g.
-  `2026.1.0` → `release-version="20261"`) — not attempted yet because
-  it changes the plugin's whole versioning history and shouldn't be
-  done reactively while chasing a Verifier error.
+`marketplace@jetbrains.com` asking for the correct
+`release-version` convention for a plugin on pure SemVer with major `0`.
+
+**2026-08-07: JetBrains support (Natalia Melnikova) replied**, suggesting
+`release-version="20261"` (or `"1"`) paired with `version` staying on
+`0.3.0` — explicitly saying it does *not* need a "matching beginning"
+with a SemVer 0.x plugin version, contradicting the rule hit on Ansible
+Companion. **Tried 2026-08-09, still fails, identical error class:**
+
+```
+Invalid plugin descriptor 'plugin.xml'. The <release-version> parameter
+[20261] and the plugin version [0.3.0] should have a matching beginning.
+For example, release version '20201' should match plugin version 2020.1.1
+```
+
+So Natalia's suggestion as literally described does not hold for this
+plugin's actual Verifier run — reported back to her (same ticket
+thread) with the exact error, asking to confirm whether any
+`release-version` value works while `version` stays SemVer 0.x, or
+whether migrating to `YYYY.Minor.Patch` is genuinely required. **Not
+proceeding with the version migration until that reply comes back** —
+per user decision 2026-08-09, don't do it reactively off an
+unconfirmed support suggestion when the Verifier itself already
+disagrees with it once.
+
+**RESOLVED 2026-08-11.** JetBrains support never replied to the
+follow-up asking whether any `release-version` value works while
+`version` stays SemVer 0.x — the ticket sat unanswered. The user
+explicitly decided to stop waiting and proceed with the same version
+migration already proven on ansible-companion/api-security-companion/
+openapi-companion ("proceed the way we did with ansible"), rather than
+continue blocking Freemium indefinitely on an unconfirmed support
+suggestion.
+
+**Migration applied:** `version` in `gradle.properties` changed from
+`0.3.0` to `2026.1.0` (YYYY.Minor.Patch). `plugin.xml`'s
+`product-descriptor` updated to `release-date="20260811"
+release-version="20261"` (leading digits now match `2026.1.0`'s
+leading digits, satisfying the "matching beginning" rule).
+`./gradlew verifyPlugin` **passed clean: 6/6 target IDEs Compatible**
+— the version-mismatch blocker is gone.
+
+A second, unrelated real bug surfaced in the same run and was fixed
+before verification passed: `RefactorSimulatorLicense.showRegisterDialog()`
+called `ActionUtil.performAction(AnAction, AnActionEvent) : AnActionResult`,
+which its own comment claimed was "available starting from IDE version
+243.*" — but `verifyPlugin` showed the opposite: `NoSuchMethodError`-class
+failures against IU-243 and IU-251 specifically (the two oldest IDEs in
+the 6-target range), Compatible against the 4 newer ones. Same failure
+mode as CONSTITUTION.md §6's `PasswordSafe.getAsync()` case: an API
+that compiles and passes unit tests against one IDE version isn't
+proof of compatibility across the range. **Fix: ported the exact
+change already live in ansible-companion/api-security-companion** —
+`ActionUtil.invokeAction(AnAction, DataContext, String place,
+InputEvent?, Runnable? onDone)` instead of `performAction`. Confirmed
+Compatible 6/6 after the swap (with one expected, harmless "1 usage of
+deprecated API" note — `invokeAction` is itself deprecated in favor of
+`performAction`, but `performAction` is the one that's actually
+unresolved on the two oldest target IDEs; same trade-off already
+accepted on the other two plugins).
+
+**Current state:** `<product-descriptor ... release-date="20260811"
+release-version="20261" optional="true"/>` (real `code=` value lives
+only in `plugin.xml`/`RefactorSimulatorLicense.kt` per
+`CONSTITUTION.md` §4.0 — not repeated here) — verified working, not
+the "last value tried," the value that passed. Do not touch
+`release-version`/`release-date` again without reading this section
+first (changing them together resets any active trial licenses,
+confirmed via JetBrains's official docs — irrelevant today
+since no trials exist yet for this plugin, but relevant before any
+future version-scheme change once real users are on a trial).

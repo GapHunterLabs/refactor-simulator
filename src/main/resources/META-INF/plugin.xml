@@ -21,23 +21,23 @@
     <depends>com.intellij.java</depends>
     <depends>org.jetbrains.kotlin</depends>
 
-    <!-- Freemium as of 0.3.0: PRODUCT_CODE assigned by JetBrains 2026-08-06
-         after enrolling in Marketplace Monetization. optional="true" means
-         the plugin still installs and works fully for free; only
-         "Will run" on a Related Test is gated, via
-         RefactorSimulatorLicense.isLicensed(). release-version must parse
-         as an integer with at least two digits (confirmed live: "03"
-         fails verifyPlugin with "format is invalid... at least two
-         digits" because the leading zero doesn't survive integer
-         parsing) while still matching the plugin version's own leading
-         digits; "003" keeps the same digit order as "0.3.0" (0, then
-         3) but padded to a width the parser can't collapse to a single
-         digit. Stays fixed as long as the plugin version starts with
-         "0.3", never touched again after this first release under it,
-         same discipline as
-         ansible-companion/api-security-companion/openapi-companion (see
-         INTELLIJ_PLATFORM_KNOWLEDGE.md, section 4.2). -->
-    <product-descriptor code="PREFACTORSIMULA" release-date="20260806" release-version="003" optional="true"/>
+    <!-- Freemium: PRODUCT_CODE assigned by JetBrains 2026-08-06 after
+         enrolling in Marketplace Monetization. optional="true" means the
+         plugin still installs and works fully for free; only "Will run"
+         on a Related Test is gated, via RefactorSimulatorLicense.isLicensed().
+         Plugin version migrated from SemVer (0.3.0) to YYYY.Minor.Patch
+         (2026.1.0) on 2026-08-11: three release-version values tried
+         against 0.3.0 ("03"/"30"/"003") all failed verifyPlugin, and a
+         fourth (JetBrains support's own suggested "20261") also failed
+         with "release-version and the plugin version should have a
+         matching beginning" (see KNOWN_ISSUES.md). Same fix already
+         proven on ansible-companion/api-security-companion/openapi-companion
+         (INTELLIJ_PLATFORM_KNOWLEDGE.md, section 4.2): release-version's
+         leading digits must match the plugin version's leading digits.
+         Stays fixed as long as the plugin version starts with "2026.1",
+         never touched again after this release without re-reading
+         KNOWN_ISSUES.md first. -->
+    <product-descriptor code="PREFACTORSIMULA" release-date="20260811" release-version="20261" optional="true"/>
 
     <actions>
         <group id="RefactorSimulator.Actions" text="Refactor Simulator" popup="true">
