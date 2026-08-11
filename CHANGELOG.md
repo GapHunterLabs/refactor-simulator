@@ -4,6 +4,27 @@
 
 ## [Unreleased]
 
+## [2026.1.0]
+
+### Changed
+
+- Migrated plugin version from SemVer (`0.3.0`) to `YYYY.Minor.Patch`
+  (`2026.1.0`), matching ansible-companion/api-security-companion/
+  openapi-companion — required for `<product-descriptor>`'s
+  `release-version` to satisfy Marketplace's "matching beginning" rule
+  (`verifyPlugin` was rejecting every SemVer-based value tried). See
+  `KNOWN_ISSUES.md` for the full trail.
+
+### Fixed
+
+- `RefactorSimulatorLicense.showRegisterDialog()` used
+  `ActionUtil.performAction(AnAction, AnActionEvent)`, which
+  `verifyPlugin` flagged as an unresolved method against the two oldest
+  target IDEs (243, 251) despite its own comment claiming 243+ support.
+  Replaced with `ActionUtil.invokeAction(...)`, the same fix already
+  live in ansible-companion and api-security-companion — Compatible
+  6/6 target IDEs after the change.
+
 ## [0.3.0]
 
 ### Added
@@ -16,7 +37,8 @@
   Validation Report, related-test *listing*, Apply/Discard) is
   completely unaffected either way.
 
-[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.0...HEAD
+[2026.1.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.3.0...2026.1.0
 [0.3.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.2.0...0.3.0
 
 ## [0.2.0]
