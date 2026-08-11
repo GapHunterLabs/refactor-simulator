@@ -37,10 +37,6 @@
   Validation Report, related-test *listing*, Apply/Discard) is
   completely unaffected either way.
 
-[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.0...HEAD
-[2026.1.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.3.0...2026.1.0
-[0.3.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.2.0...0.3.0
-
 ## [0.2.0]
 
 ### Added
@@ -121,7 +117,9 @@
   ships Rename only.
 - MOVE refactoring isn't planned for v0.1 at all — see KNOWN_ISSUES.md.
 
-[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.0...HEAD
+[2026.1.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.3.0...2026.1.0
+[0.3.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/GapHunterLabs/refactor-simulator/commits/0.1.0
