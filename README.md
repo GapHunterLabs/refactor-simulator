@@ -120,7 +120,7 @@ with "Will run" disabled — nothing else in the plugin is gated.
 ## Enterprise / Team Licensing
 
 Need enterprise features, custom refactoring rules, or team licensing?
-Contact us at **kennyj.diazm@gmail.com**.
+Contact us at **gaphunterlabs@gmail.com**.
 
 ## Development
 
