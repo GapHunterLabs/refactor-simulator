@@ -58,6 +58,7 @@
             displayName="Refactor Simulator"/>
         <toolWindow id="Refactor Simulator"
                     anchor="right"
+                    icon="/icons/toolWindow.svg"
                     factoryClass="dev.gaphunter.refactorsimulator.ui.ImpactToolWindowFactory"/>
     </extensions>
 
