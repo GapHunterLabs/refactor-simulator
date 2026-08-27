@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [2026.1.2]
+
+### Added
+
+- Review/star CTA: after 5 refactors actually applied to disk via
+  "Apply to Disk" (never counted for just Simulate, Discard, or
+  opening the tool window -- previewing a refactor isn't the same
+  signal of trust as applying it), a one-time notification asks
+  whether to rate the plugin on Marketplace, with a permanent "Don't
+  ask again" option.
+
 ## [2026.1.1]
 
 ### Fixed
@@ -125,7 +136,9 @@
   ships Rename only.
 - MOVE refactoring isn't planned for v0.1 at all — see KNOWN_ISSUES.md.
 
-[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.0...HEAD
+[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.2...HEAD
+[2026.1.2]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.1...2026.1.2
+[2026.1.1]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.0...2026.1.1
 [2026.1.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.3.0...2026.1.0
 [0.3.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.1.1...0.2.0
