@@ -96,8 +96,8 @@ same underlying need (here: `ReferencesSearch` instead of
 the restricted method. **This class of bug has no signal at all in
 `compileKotlin`, `test`, or `runIde`** — `verifyPlugin` is the only step
 in this project's entire verification chain that would ever catch it,
-which is why it's now listed as a mandatory step (not just a
-pre-Marketplace formality) in this workspace's `AUTOMATION_PLAYBOOK.md`.
+which is why it's a mandatory step here, not just a pre-Marketplace
+formality.
 
 ## "Apply to Disk" showed a success dialog but wrote nothing to disk (found and fixed, 2026-07-28)
 
@@ -544,9 +544,9 @@ which its own comment claimed was "available starting from IDE version
 243.*" — but `verifyPlugin` showed the opposite: `NoSuchMethodError`-class
 failures against IU-243 and IU-251 specifically (the two oldest IDEs in
 the 6-target range), Compatible against the 4 newer ones. Same failure
-mode as CONSTITUTION.md §6's `PasswordSafe.getAsync()` case: an API
-that compiles and passes unit tests against one IDE version isn't
-proof of compatibility across the range. **Fix: ported the exact
+mode as a previously-documented `PasswordSafe.getAsync()` case in this
+catalog: an API that compiles and passes unit tests against one IDE
+version isn't proof of compatibility across the range. **Fix: ported the exact
 change already live in ansible-companion/api-security-companion** —
 `ActionUtil.invokeAction(AnAction, DataContext, String place,
 InputEvent?, Runnable? onDone)` instead of `performAction`. Confirmed
@@ -558,8 +558,8 @@ accepted on the other two plugins).
 
 **Current state:** `<product-descriptor ... release-date="20260811"
 release-version="20261" optional="true"/>` (real `code=` value lives
-only in `plugin.xml`/`RefactorSimulatorLicense.kt` per
-`CONSTITUTION.md` §4.0 — not repeated here) — verified working, not
+only in `plugin.xml`/`RefactorSimulatorLicense.kt` — not repeated
+here) — verified working, not
 the "last value tried," the value that passed. Do not touch
 `release-version`/`release-date` again without reading this section
 first (changing them together resets any active trial licenses,
