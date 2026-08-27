@@ -31,9 +31,9 @@
          fourth (JetBrains support's own suggested "20261") also failed
          with "release-version and the plugin version should have a
          matching beginning" (see KNOWN_ISSUES.md). Same fix already
-         proven on ansible-companion/api-security-companion/openapi-companion
-         (INTELLIJ_PLATFORM_KNOWLEDGE.md, section 4.2): release-version's
-         leading digits must match the plugin version's leading digits.
+         proven on ansible-companion/api-security-companion/openapi-companion:
+         release-version's leading digits must match the plugin
+         version's leading digits.
          Stays fixed as long as the plugin version starts with "2026.1",
          never touched again after this release without re-reading
          KNOWN_ISSUES.md first. -->
