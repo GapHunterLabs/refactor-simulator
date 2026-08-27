@@ -51,6 +51,7 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="Refactor Simulator" displayType="BALLOON"/>
         <applicationConfigurable
             parentId="tools"
             instance="dev.gaphunter.refactorsimulator.settings.RefactorSimulatorConfigurable"

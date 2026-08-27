@@ -7,6 +7,7 @@ import com.intellij.psi.PsiNamedElement
 import com.intellij.refactoring.rename.RenameProcessor
 import dev.gaphunter.refactorsimulator.refactor.RefactorKind
 import dev.gaphunter.refactorsimulator.refactor.SimulationResult
+import dev.gaphunter.refactorsimulator.review.ReviewPrompt
 import dev.gaphunter.refactorsimulator.sandbox.SandboxSession
 
 /**
@@ -58,6 +59,10 @@ object ApplyToDiskAction {
             RefactorKind.EXTRACT_VARIABLE -> applyComputedText(session, result)
             RefactorKind.EXTRACT_FUNCTION -> error("Extract Function apply is not implemented yet")
         }
+        // Real applied refactor only -- an exception above (e.g. "not
+        // implemented yet") never reaches this line. Simulate/Discard/
+        // just opening the tool window never call this function at all.
+        ReviewPrompt.recordHit(session.project)
         session.dispose()
     }
 
