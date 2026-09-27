@@ -83,10 +83,19 @@ Report, the native diff, listing related test files, and Apply/Discard
 **Pro (Freemium, as of 0.3.0):** actually *executing* the related tests
 — clicking "Will run" copies the affected module and everything that
 depends on it into an isolated temp directory (via
-`ModuleSourceRootResolver`) and runs them with the Gradle Tooling API,
-reusing the same temp dir/daemon across a session for speed. Requires a
-license; unlicensed installs still see the full related-test list, just
-with "Will run" disabled — nothing else in the plugin is gated.
+`ModuleSourceRootResolver`) and runs them there. **Gradle projects** run
+through the Gradle Tooling API, reusing the same temp dir/daemon across a
+session for speed. **Maven projects** run through a Maven process started
+from a Maven installation found in this order: `REFACTOR_SIMULATOR_MAVEN_HOME`,
+`MAVEN_HOME`/`M2_HOME`, a `mvn` on the PATH, or the Maven bundled with
+IntelliJ IDEA (so no global Maven is needed), and the result of each test
+class comes from its Surefire report. A Maven project's modules must sit
+inside the project directory (a single module, or a root aggregator pom with
+modules below it, nested ones included) — a module elsewhere is reported as
+unsupported, never guessed at. There is no daemon to keep warm, so a Maven run
+takes as long as `mvn test` does on those modules. Requires a license;
+unlicensed installs still see the full related-test list, just with "Will
+run" disabled — nothing else in the plugin is gated.
 
 ## Why built this way
 

@@ -37,7 +37,7 @@
          Stays fixed as long as the plugin version starts with "2026.1",
          never touched again after this release without re-reading
          KNOWN_ISSUES.md first. -->
-    <product-descriptor code="PREFACTORSIMULA" release-date="20260811" release-version="20261" optional="true"/>
+    <product-descriptor code="PREFACTORSIMULA" release-date="20260926" release-version="20262" optional="true"/>
 
     <actions>
         <group id="RefactorSimulator.Actions" text="Refactor Simulator" popup="true">

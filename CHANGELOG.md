@@ -4,6 +4,29 @@
 
 ## [Unreleased]
 
+## [2026.2.0]
+
+### Added
+
+- **Maven projects (Refactor Simulator Pro).** Running the related tests in
+  the isolated sandbox used to work only for Gradle projects; a Maven
+  project now works too. The affected module and the modules that depend
+  on it are copied (keeping the directory layout and the parent poms they
+  inherit from, with the root pom's `<modules>` trimmed to the copy), the
+  simulated files are written over the copy, and Maven runs the tests
+  there; the real project is never touched. Maven comes from
+  `REFACTOR_SIMULATOR_MAVEN_HOME`, `MAVEN_HOME`/`M2_HOME`, a `mvn` on the
+  PATH, or the Maven bundled with IntelliJ IDEA, so no global Maven is
+  required. Each test class is reported as passed or failed from its
+  Surefire report, with the first failure's message. A module outside the
+  project directory is reported as unsupported instead of guessed at.
+  A project with any Gradle build file keeps the Gradle path.
+
+### Fixed
+
+- Review/star CTA now links to this plugin's own Marketplace
+  reviews page instead of the vendor's generic plugin list.
+
 ## [2026.1.2]
 
 ### Added
@@ -136,7 +159,8 @@
   ships Rename only.
 - MOVE refactoring isn't planned for v0.1 at all — see KNOWN_ISSUES.md.
 
-[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.2...HEAD
+[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.2.0...HEAD
+[2026.2.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.2...2026.2.0
 [2026.1.2]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.1...2026.1.2
 [2026.1.1]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.0...2026.1.1
 [2026.1.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/0.3.0...2026.1.0
