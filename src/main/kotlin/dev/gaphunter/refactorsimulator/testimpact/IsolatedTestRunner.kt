@@ -14,6 +14,7 @@ import java.io.IOException
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.CountDownLatch
@@ -65,6 +66,13 @@ class IsolatedTestRunner(private val project: Project) {
         affectedFileOverrides: Map<String, String>,
     ): List<TestOutcome>? {
         val tempDir = ensureSessionTempDir() ?: return null
+
+        // A Maven project has no Gradle build to drive: it gets its own runner (same idea, a Maven process instead
+        // of the Tooling API). A project with any Gradle build file keeps the Gradle path below, as before.
+        val base = project.basePath
+        if (base != null && BuildSystemDetector.detect(Paths.get(base)) == BuildSystem.MAVEN) {
+            return MavenTestRunner(project).run(tempDir, moduleSourceRoots, affectedFileOverrides)
+        }
 
         copyModules(moduleSourceRoots, tempDir)
         writeTrimmedSettings(tempDir, moduleSourceRoots.keys)
