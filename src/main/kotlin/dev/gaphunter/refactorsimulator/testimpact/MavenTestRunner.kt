@@ -1,7 +1,6 @@
 package dev.gaphunter.refactorsimulator.testimpact
 
-import com.intellij.ide.plugins.PluginManager
-import com.intellij.openapi.extensions.PluginId
+import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.project.Project
 import java.io.File
 import java.io.IOException
@@ -177,6 +176,11 @@ class MavenTestRunner(
     }
 }
 
-/** Maven bundled with IntelliJ IDEA's Maven plugin (`<plugin>/lib/maven3`), when that plugin is enabled. */
+/**
+ * Maven bundled with IntelliJ IDEA's Maven plugin (`<IDE home>/plugins/maven/lib/maven3`), when the IDE ships it.
+ * Found by path through [PathManager] on purpose: the plugin-lookup APIs are internal in recent IDEs and compile to a
+ * `PluginId.Companion` reference that doesn't exist in 2024.3/2025.1, which verifyPlugin rejected. A missing directory
+ * simply means "no bundled Maven" -- [MavenSandbox.launcherJar] checks it before use.
+ */
 private fun ideBundledMavenHome(): Path? =
-    PluginManager.getInstance().findEnabledPlugin(PluginId.getId("org.jetbrains.idea.maven"))?.pluginPath?.resolve("lib")?.resolve("maven3")
+    Paths.get(PathManager.getHomePath(), "plugins", "maven", "lib", "maven3").takeIf { Files.isDirectory(it) }
