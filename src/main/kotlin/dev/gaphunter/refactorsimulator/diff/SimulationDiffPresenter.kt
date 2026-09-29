@@ -35,7 +35,7 @@ object SimulationDiffPresenter {
         DiffManager.getInstance().showDiff(project, chain, com.intellij.diff.DiffDialogHints.DEFAULT)
     }
 
-    private fun buildRequest(file: AffectedFile): SimpleDiffRequest {
+    internal fun buildRequest(file: AffectedFile): SimpleDiffRequest {
         val factory = DiffContentFactory.getInstance()
         val original: DiffContent = factory.create(file.originalText).also {
             it.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)

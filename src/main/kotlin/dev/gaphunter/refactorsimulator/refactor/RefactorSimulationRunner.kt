@@ -1,7 +1,11 @@
 package dev.gaphunter.refactorsimulator.refactor
 
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.DumbService
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiStatement
 import com.intellij.psi.search.searches.ReferencesSearch
@@ -64,25 +68,56 @@ object RefactorSimulationRunner {
         val target = session.originalElement as? PsiNamedElement
             ?: error("Rename target must be a PsiNamedElement")
 
-        val usages = ReferencesSearch.search(target).findAll()
-            .map { reference -> UsageInfo(reference) }
-            .toTypedArray()
-        val conflicts = detectConflicts(usages)
+        val oldName = target.name ?: ""
+        val references = ReferencesSearch.search(target).findAll()
+        val usages = references.map { reference -> UsageInfo(reference) }.toTypedArray()
+        val conflicts = detectConflicts(usages).toMutableList()
 
-        val usagesByFile = usages.filter { it.file != null }.groupBy { it.file!! }
-        val affectedFiles = usagesByFile.map { (file, fileUsages) ->
+        // Each rename range is taken NOW from the reference itself (its element's offset in the file plus the
+        // reference's range in that element), not later through UsageInfo.segment: that goes through a smart
+        // pointer and comes back null once the PSI is invalidated (a Gradle sync finishing is enough), and a null
+        // range used to be dropped silently -- the file was still counted as affected, with an unchanged preview.
+        val ranges = linkedMapOf<PsiFile, MutableList<TextRange>>()
+        val referenceCounts = mutableMapOf<PsiFile, Int>()
+        // The declaration's own name changes too, in its own file -- it isn't a reference, so the search below never
+        // returns it, and the preview used to show every call site renamed but the declaration unchanged. Its file
+        // goes first, so it is the first one the diff shows.
+        val declarationFile = (target as? PsiNameIdentifierOwner)?.nameIdentifier?.let { identifier ->
+            identifier.containingFile?.also { file -> ranges.getOrPut(file) { mutableListOf() } += identifier.textRange }
+        }
+        for (reference in references) {
+            val element = reference.element
+            val file = element.containingFile ?: continue
+            referenceCounts.merge(file, 1, Int::plus)
+            ranges.getOrPut(file) { mutableListOf() } += reference.rangeInElement.shiftRight(element.textRange.startOffset)
+        }
+
+        val affectedFiles = ranges.map { (file, fileRanges) ->
+            val filePath = file.virtualFile?.path ?: file.name
+            val (simulatedText, skipped) = applyRenameToText(file.text, fileRanges, oldName, newName)
+            if (skipped > 0) {
+                // Never a silent gap: a spot the preview can't rewrite is reported, not left looking unchanged.
+                conflicts += Conflict("$skipped occurrence(s) of '$oldName' in this file couldn't be shown in the preview", filePath)
+            }
             AffectedFile(
-                filePath = file.virtualFile?.path ?: file.name,
+                filePath = filePath,
                 originalText = file.text,
-                simulatedText = applyRenameToText(file.text, fileUsages, newName),
-                referenceCount = fileUsages.size,
+                simulatedText = simulatedText,
+                referenceCount = referenceCounts[file] ?: 0,
                 importCount = 0,
+                declarationCount = if (file == declarationFile) 1 else 0,
             )
         }
+        // One line per simulation (user-triggered): what the preview holds, file by file, for support reports.
+        thisLogger().info(
+            "rename '$oldName' -> '$newName': " + affectedFiles.joinToString { f ->
+                "${f.filePath.substringAfterLast('/')} refs=${f.referenceCount} decl=${f.declarationCount} changed=${f.simulatedText != f.originalText}"
+            } + if (conflicts.isEmpty()) "" else "; ${conflicts.size} conflict(s)",
+        )
 
         return SimulationResult(
             kind = RefactorKind.RENAME,
-            originalName = target.name ?: "",
+            originalName = oldName,
             newName = newName,
             affectedFiles = affectedFiles,
             conflicts = conflicts,
@@ -204,17 +239,24 @@ object RefactorSimulationRunner {
      * containing the same substring -- and it never constructs or mutates
      * a second PSI tree.
      */
-    private fun applyRenameToText(originalText: String, fileUsages: List<UsageInfo>, newName: String): String {
-        val ranges = fileUsages.mapNotNull { it.segment }
-            .sortedByDescending { it.startOffset }
-
+    /**
+     * Replaces [oldName] with [newName] at each range, last range first so earlier offsets stay valid. A range is
+     * rewritten only when the text there really is [oldName] -- a reference whose text differs (e.g. a Kotlin
+     * property access to a Java getter, `engine.total` for `getTotal()`) is counted in the second value instead of
+     * being guessed at. Returns the new text and how many ranges were skipped.
+     */
+    internal fun applyRenameToText(originalText: String, ranges: List<TextRange>, oldName: String, newName: String): Pair<String, Int> {
         val builder = StringBuilder(originalText)
-        for (range in ranges) {
-            if (range.startOffset in 0..builder.length && range.endOffset in range.startOffset..builder.length) {
+        var skipped = 0
+        for (range in ranges.distinct().sortedByDescending { it.startOffset }) {
+            val inBounds = range.startOffset >= 0 && range.endOffset <= builder.length && range.startOffset <= range.endOffset
+            if (inBounds && builder.substring(range.startOffset, range.endOffset) == oldName) {
                 builder.replace(range.startOffset, range.endOffset, newName)
+            } else {
+                skipped++
             }
         }
-        return builder.toString()
+        return builder.toString() to skipped
     }
 
     /**
