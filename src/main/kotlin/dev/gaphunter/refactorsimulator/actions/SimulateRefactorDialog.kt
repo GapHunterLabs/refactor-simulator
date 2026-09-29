@@ -44,7 +44,12 @@ class SimulateRefactorDialog(
     init {
         title = "Simulate Refactor"
         init()
+        newNameField.selectAll()
     }
+
+    // Like the platform's own rename dialog: the name field has the focus with the current name selected, so typing
+    // replaces it. Without this, keystrokes went nowhere and OK "renamed" the symbol to its own name.
+    override fun getPreferredFocusedComponent(): JComponent = newNameField
 
     override fun createCenterPanel(): JComponent {
         val panel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
@@ -54,20 +59,19 @@ class SimulateRefactorDialog(
         return panel
     }
 
-    override fun doValidate(): com.intellij.openapi.ui.ValidationInfo? {
-        val newName = newNameField.text
-        if (newName.isBlank()) {
-            return com.intellij.openapi.ui.ValidationInfo("Name cannot be empty", newNameField)
-        }
+    override fun doValidate(): com.intellij.openapi.ui.ValidationInfo? =
+        nameProblem(project, target, newNameField.text)?.let { com.intellij.openapi.ui.ValidationInfo(it, newNameField) }
 
-        val validator = LanguageNamesValidation.INSTANCE.forLanguage(target.language)
-        if (validator.isKeyword(newName, project)) {
-            return com.intellij.openapi.ui.ValidationInfo("'$newName' is a reserved keyword", newNameField)
+    companion object {
+        /** Why [newName] can't be simulated for [target], or null when it can. */
+        internal fun nameProblem(project: Project, target: PsiNamedElement, newName: String): String? {
+            if (newName.isBlank()) return "Name cannot be empty"
+            if (newName == target.name) return "Enter a name different from the current one"
+            val validator = LanguageNamesValidation.INSTANCE.forLanguage(target.language)
+            if (validator.isKeyword(newName, project)) return "'$newName' is a reserved keyword"
+            if (!validator.isIdentifier(newName, project)) return "'$newName' is not a valid identifier"
+            return null
         }
-        if (!validator.isIdentifier(newName, project)) {
-            return com.intellij.openapi.ui.ValidationInfo("'$newName' is not a valid identifier", newNameField)
-        }
-        return null
     }
 
     override fun doOKAction() {

@@ -81,11 +81,15 @@ Report, the native diff, listing related test files, and Apply/Discard
 — all of it, no paywall on any of the above.
 
 **Pro (Freemium, as of 0.3.0):** actually *executing* the related tests
-— clicking "Will run" copies the affected module and everything that
-depends on it into an isolated temp directory (via
-`ModuleSourceRootResolver`) and runs them there. **Gradle projects** run
-through the Gradle Tooling API, reusing the same temp dir/daemon across a
-session for speed. **Maven projects** run through a Maven process started
+— clicking "Will run" runs that test class against an isolated copy of
+the project with the simulated change applied; the real project is never
+touched. **Gradle projects:** the whole Gradle build (settings, build
+scripts, wrapper, sources — not build outputs) is mirrored into a temp
+directory, Gradle itself reports which project owns the test, and only that
+test class runs, through the Gradle Tooling API. The same temp directory
+and daemon are reused across a session for speed. If the run can't start
+(for example, the simulated code doesn't compile), the result dialog shows
+Gradle's reason. **Maven projects** run through a Maven process started
 from a Maven installation found in this order: `REFACTOR_SIMULATOR_MAVEN_HOME`,
 `MAVEN_HOME`/`M2_HOME`, a `mvn` on the PATH, or the Maven bundled with
 IntelliJ IDEA (so no global Maven is needed), and the result of each test

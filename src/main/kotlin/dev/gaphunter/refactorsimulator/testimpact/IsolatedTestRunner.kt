@@ -1,15 +1,7 @@
 package dev.gaphunter.refactorsimulator.testimpact
 
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
-import org.gradle.tooling.GradleConnector
-import org.gradle.tooling.ProjectConnection
-import org.gradle.tooling.ResultHandler
-import org.gradle.tooling.events.OperationType
-import org.gradle.tooling.events.ProgressEvent
-import org.gradle.tooling.events.test.TestFailureResult
-import org.gradle.tooling.events.test.TestFinishEvent
-import org.gradle.tooling.events.test.TestSuccessResult
-import java.io.File
 import java.io.IOException
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
@@ -17,31 +9,28 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
+
+/** What a Gradle run needs: the build's root, the clicked test (file + class), and every simulated file's text. */
+data class GradleTestRequest(
+    val buildRoot: String,
+    val testFilePath: String,
+    val testClassName: String,
+    val simulatedTexts: Map<String, String>,
+)
 
 /**
- * Runs the tests [RelatedTestFinder] identified, against a copy of only
- * the minimal module subset (the affected module + modules that depend
- * on it), materialized into a temp directory.
+ * Runs a related test against an isolated copy of the project with the simulated change applied, materialized into
+ * a temp directory -- the real project is never touched.
  *
- * Design confirmed by a disposable spike (2026-07-28, see the plan and
- * KNOWN_ISSUES.md for full numbers) before this class was written:
- * - Gradle Tooling API (not ProjectTaskManager -- never needed it) can
- *   run `test` against an arbitrary temp directory.
- * - **The temp directory must be created once per IDE session/project
- *   and reused across invocations, never a fresh UUID-named dir per
- *   simulation.** A fresh dir per run means a cold Gradle daemon every
- *   time (~24-30s measured); the same dir reused lets Gradle recognize
- *   the same project and reuse its daemon (~0.6-1.1s measured after the
- *   first run). This is the single highest-leverage design decision in
- *   this class -- get it wrong and the feature feels broken even though
- *   it "works."
- * - Partial-module copy (excluding unrelated modules, with a trimmed
- *   settings.gradle.kts generated for the copy) resolves without
- *   classpath errors -- verified against a 3-module project where two
- *   modules had a real dependency edge and the third was deliberately
- *   unrelated.
+ * - Gradle: the whole build is mirrored ([GradleSandbox]) and Gradle itself says which project owns the test, then
+ *   only that project's `test` task runs, filtered to the test class. (Until 2026.2.1 the copy was built from
+ *   IntelliJ modules; with Gradle those are per source set -- `src/main`, `src/test` -- so the copy had no build
+ *   scripts and every run failed.)
+ * - Maven: [MavenTestRunner], from the IntelliJ modules, which for Maven are the Maven modules themselves.
+ * - **The temp directory is created once per IDE session/project and reused across invocations, never a fresh
+ *   UUID-named dir per simulation.** A fresh dir per run means a cold Gradle daemon every time (~24-30s measured);
+ *   the same dir reused lets Gradle recognize the same project and reuse its daemon, and keeps its build outputs
+ *   incremental.
  *
  * One [IsolatedTestRunner] instance is meant to be owned by
  * [dev.gaphunter.refactorsimulator.ui.ImpactPanel] (one panel per tool
@@ -54,31 +43,39 @@ class IsolatedTestRunner(private val project: Project) {
     private var sessionTempDir: Path? = null
 
     /**
-     * Runs [testFilePaths] against [moduleSourceRoots] (module dir name
-     * -> absolute path in the real project) with [affectedFileOverrides]
-     * (absolute temp-dir-relative path -> simulated file content)
-     * applied on top of the copy. Returns null if the temp dir couldn't
-     * be prepared; never throws for a normal test failure (that's a
-     * TestOutcome with FAIL, not an exception).
+     * Runs the related test [gradle] describes (Gradle projects) or the modules in [moduleSourceRoots] with
+     * [affectedFileOverrides] applied (Maven projects), in the session's isolated copy. Returns null if the temp dir
+     * couldn't be prepared; never throws for a normal test failure (that's a TestOutcome with FAIL, not an exception),
+     * and a run that can't start is an outcome named "(...)" that carries the reason.
      */
     fun runRelatedTests(
         moduleSourceRoots: Map<String, Path>,
         affectedFileOverrides: Map<String, String>,
+        gradle: GradleTestRequest? = null,
     ): List<TestOutcome>? {
         val tempDir = ensureSessionTempDir() ?: return null
 
         // A Maven project has no Gradle build to drive: it gets its own runner (same idea, a Maven process instead
-        // of the Tooling API). A project with any Gradle build file keeps the Gradle path below, as before.
+        // of the Tooling API). A project with any Gradle build file keeps the Gradle path below.
         val base = project.basePath
         if (base != null && BuildSystemDetector.detect(Paths.get(base)) == BuildSystem.MAVEN) {
             return MavenTestRunner(project).run(tempDir, moduleSourceRoots, affectedFileOverrides)
         }
 
-        copyModules(moduleSourceRoots, tempDir)
-        writeTrimmedSettings(tempDir, moduleSourceRoots.keys)
-        applyOverrides(tempDir, affectedFileOverrides)
-
-        return runGradleTest(tempDir)
+        val request = gradle ?: return listOf(GradleTestRun.failed("the Gradle build that contains this test couldn't be determined"))
+        val relativeTest = GradleSandbox.relativeTo(request.buildRoot, request.testFilePath)
+            ?: return listOf(GradleTestRun.failed("${request.testFilePath} is outside the Gradle build at ${request.buildRoot}"))
+        val overrides = request.simulatedTexts.mapNotNull { (path, text) ->
+            GradleSandbox.relativeTo(request.buildRoot, path)?.let { it to text }
+        }.toMap()
+        try {
+            GradleSandbox.sync(Paths.get(request.buildRoot), tempDir, overrides)
+        } catch (e: IOException) {
+            return listOf(GradleTestRun.failed("couldn't copy the build into the isolated directory: ${e.message}"))
+        }
+        thisLogger().info("isolated Gradle run: ${request.testClassName} with ${overrides.size} simulated file(s): " +
+            overrides.keys.joinToString { it.substringAfterLast('/') })
+        return GradleTestRun.run(tempDir, relativeTest, request.testClassName)
     }
 
     /** Called from [dev.gaphunter.refactorsimulator.apply.DiscardAction]. */
@@ -97,102 +94,6 @@ class IsolatedTestRunner(private val project: Project) {
         } catch (e: IOException) {
             null
         }
-    }
-
-    private fun copyModules(moduleSourceRoots: Map<String, Path>, tempDir: Path) {
-        for ((moduleName, sourcePath) in moduleSourceRoots) {
-            val targetPath = tempDir.resolve(moduleName)
-            if (Files.exists(targetPath)) {
-                defensiveDelete(targetPath)
-            }
-            copyDirectory(sourcePath, targetPath)
-        }
-    }
-
-    private fun writeTrimmedSettings(tempDir: Path, moduleNames: Set<String>) {
-        val includeLine = moduleNames.joinToString(", ") { "\"$it\"" }
-        Files.writeString(
-            tempDir.resolve("settings.gradle.kts"),
-            "rootProject.name = \"refactor-simulator-sandbox\"\ninclude($includeLine)\n",
-        )
-        // The root build.gradle.kts (shared plugin config for all
-        // subprojects) is copied verbatim by the caller alongside
-        // moduleSourceRoots -- IsolatedTestRunner only owns the parts
-        // that differ per simulation (settings.gradle.kts, overrides).
-    }
-
-    private fun applyOverrides(tempDir: Path, overrides: Map<String, String>) {
-        for ((relativePath, content) in overrides) {
-            val target = tempDir.resolve(relativePath)
-            Files.createDirectories(target.parent)
-            Files.writeString(target, content)
-        }
-    }
-
-    private fun runGradleTest(tempDir: Path): List<TestOutcome> {
-        val outcomes = mutableListOf<TestOutcome>()
-        val latch = CountDownLatch(1)
-        var failureMessage: String? = null
-
-        val connector = GradleConnector.newConnector().forProjectDirectory(tempDir.toFile())
-        try {
-            connector.connect().use { connection: ProjectConnection ->
-                connection.newBuild()
-                    .forTasks("test")
-                    .addProgressListener(
-                        { event: ProgressEvent ->
-                            if (event is TestFinishEvent) {
-                                val status = when (event.result) {
-                                    is TestSuccessResult -> TestStatus.PASS
-                                    is TestFailureResult -> TestStatus.FAIL
-                                    else -> TestStatus.OTHER
-                                }
-                                outcomes += TestOutcome(event.descriptor.displayName, status)
-                            }
-                        },
-                        OperationType.TEST,
-                    )
-                    .run(object : ResultHandler<Void> {
-                        override fun onComplete(result: Void?) = latch.countDown()
-                        override fun onFailure(failure: org.gradle.tooling.GradleConnectionException) {
-                            failureMessage = failure.message
-                            latch.countDown()
-                        }
-                    })
-
-                latch.await(60, TimeUnit.SECONDS)
-            }
-        } finally {
-            connector.disconnect()
-        }
-
-        failureMessage?.let {
-            outcomes += TestOutcome("(Gradle run failed)", TestStatus.OTHER, truncatedOutput = it.take(500))
-        }
-        return outcomes
-    }
-
-    private fun copyDirectory(source: Path, target: Path) {
-        Files.walkFileTree(
-            source,
-            object : SimpleFileVisitor<Path>() {
-                override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-                    val rel = source.relativize(dir).toString()
-                    if (rel == ".gradle" || rel.startsWith(".gradle${File.separator}") ||
-                        rel == "build" || rel.startsWith("build${File.separator}")
-                    ) {
-                        return FileVisitResult.SKIP_SUBTREE
-                    }
-                    Files.createDirectories(target.resolve(source.relativize(dir)))
-                    return FileVisitResult.CONTINUE
-                }
-
-                override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                    Files.copy(file, target.resolve(source.relativize(file)))
-                    return FileVisitResult.CONTINUE
-                }
-            },
-        )
     }
 
     /**

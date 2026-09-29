@@ -1,10 +1,17 @@
 package dev.gaphunter.refactorsimulator.ui
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Computable
+import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
+import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.psi.PsiClassOwner
+import com.intellij.psi.PsiManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -15,11 +22,13 @@ import dev.gaphunter.refactorsimulator.impact.ImpactAnalyzer
 import dev.gaphunter.refactorsimulator.licensing.RefactorSimulatorLicense
 import dev.gaphunter.refactorsimulator.refactor.SimulationResult
 import dev.gaphunter.refactorsimulator.sandbox.SandboxSession
+import dev.gaphunter.refactorsimulator.testimpact.GradleTestRequest
 import dev.gaphunter.refactorsimulator.testimpact.IsolatedTestRunner
 import dev.gaphunter.refactorsimulator.testimpact.ModuleSourceRootResolver
-import dev.gaphunter.refactorsimulator.testimpact.TestStatus
+import dev.gaphunter.refactorsimulator.testimpact.TestRunSummary
 import java.awt.BorderLayout
 import java.awt.GridLayout
+import java.nio.file.Path
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JButton
@@ -104,23 +113,37 @@ class ImpactPanel(private val project: Project) : JBPanel<ImpactPanel>(BorderLay
 
         object : Task.Backgroundable(project, "Running related test", true) {
             override fun run(indicator: ProgressIndicator) {
-                val moduleSourceRoots = ModuleSourceRootResolver.resolveModuleSourceRoots(result, project)
-                val overrides = ModuleSourceRootResolver.buildOverrides(result, project, moduleSourceRoots)
-                val outcomes = testRunner.runRelatedTests(moduleSourceRoots, overrides)
+                // Module/file lookups and PSI reads need read access; the run itself happens outside it.
+                val (moduleSourceRoots, overrides, gradle) = ApplicationManager.getApplication().runReadAction(
+                    Computable<Triple<Map<String, Path>, Map<String, String>, GradleTestRequest?>> {
+                        val roots = ModuleSourceRootResolver.resolveModuleSourceRoots(result, project)
+                        Triple(roots, ModuleSourceRootResolver.buildOverrides(result, project, roots), gradleRequest(result, testFilePath))
+                    },
+                )
+                val outcomes = testRunner.runRelatedTests(moduleSourceRoots, overrides, gradle)
+                val testName = testFilePath.substringAfterLast('/').substringAfterLast('\\')
 
+                val summary = TestRunSummary.describe(outcomes, testName)
+                thisLogger().info("related test result: " + summary.lineSequence().first())
                 ApplicationManager.getApplication().invokeLater {
-                    val outcome = outcomes?.firstOrNull { it.displayName.endsWith(testFilePath.substringAfterLast('/').substringAfterLast('\\').substringBefore(".")) }
-                    val message = when {
-                        outcomes == null -> "Could not prepare the isolated sandbox for this run."
-                        outcome == null -> "Ran ${outcomes.size} test(s); couldn't match one back to $testFilePath specifically -- see full output below.\n\n" +
-                            outcomes.joinToString("\n") { "${it.status}: ${it.displayName}" }
-                        outcome.status == TestStatus.PASS -> "✓ ${outcome.displayName} passed."
-                        else -> "${if (outcome.status == TestStatus.FAIL) "✗" else "⚠"} ${outcome.displayName}: ${outcome.status}\n\n${outcome.truncatedOutput ?: ""}"
-                    }
-                    Messages.showInfoMessage(project, message, "Refactor Simulator — Related Test Result")
+                    Messages.showInfoMessage(project, summary, "Refactor Simulator — Related Test Result")
                 }
             }
         }.queue()
+    }
+
+    /**
+     * The Gradle side of a run: the root of the Gradle build that owns the test (as IntelliJ linked it), the test's
+     * class name for `--tests`, and the simulated text of every affected file. Null when the test file is gone.
+     */
+    private fun gradleRequest(result: SimulationResult, testFilePath: String): GradleTestRequest? {
+        val file = LocalFileSystem.getInstance().findFileByPath(testFilePath.replace('\\', '/')) ?: return null
+        val module = ModuleUtilCore.findModuleForFile(file, project)
+        val buildRoot = module?.let { ExternalSystemApiUtil.getExternalRootProjectPath(it) } ?: project.basePath ?: return null
+        val owner = PsiManager.getInstance(project).findFile(file) as? PsiClassOwner
+        val className = owner?.classes?.firstOrNull()?.qualifiedName
+            ?: listOfNotNull(owner?.packageName?.takeIf { it.isNotEmpty() }, file.nameWithoutExtension).joinToString(".")
+        return GradleTestRequest(buildRoot, file.path, className, result.affectedFiles.associate { it.filePath to it.simulatedText })
     }
 
     fun showSimulationResult(session: SandboxSession, result: SimulationResult, relatedTestNames: List<String>) {

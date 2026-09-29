@@ -4,6 +4,27 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Running related tests in Gradle projects (Refactor Simulator Pro).**
+  The run failed on Gradle projects imported the standard way, where
+  IntelliJ creates one module per source set: the isolated copy was built
+  from those modules and ended up with sources but no build scripts. The
+  whole Gradle build is now mirrored, Gradle reports which project owns the
+  test, and only the clicked test class runs.
+- The test result dialog now says why a run couldn't start (Gradle's
+  message and the end of its error output) and how many tests passed or
+  which ones failed, instead of "couldn't match one back to" the file.
+- **Rename preview.** The declaration itself now appears renamed in the
+  preview and the diff, not only its call sites, and "Total changes" counts
+  it. A spot the preview can't rewrite is reported as a conflict instead of
+  being skipped silently.
+- **Rename dialog.** The name field now has the focus with the current name
+  selected, so typing replaces it (as in the IDE's own rename dialog), and
+  the current name itself is rejected. Before, typed text could be lost and
+  the simulation ran with the unchanged name, so the diff showed no
+  differences.
+
 ## [2026.2.0]
 
 ### Added

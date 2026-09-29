@@ -16,7 +16,8 @@ data class SimulationResult(
 ) {
     val totalReferenceCount: Int get() = affectedFiles.sumOf { it.referenceCount }
     val totalImportCount: Int get() = affectedFiles.sumOf { it.importCount }
-    val totalChangeCount: Int get() = totalReferenceCount + totalImportCount
+    val totalDeclarationCount: Int get() = affectedFiles.sumOf { it.declarationCount }
+    val totalChangeCount: Int get() = totalReferenceCount + totalImportCount + totalDeclarationCount
     val hasConflicts: Boolean get() = conflicts.isNotEmpty()
 }
 
@@ -26,6 +27,8 @@ data class AffectedFile(
     val simulatedText: String,
     val referenceCount: Int,
     val importCount: Int,
+    /** 1 in the file that declares the renamed symbol (its own name changes there too), 0 elsewhere. */
+    val declarationCount: Int = 0,
 )
 
 data class Conflict(
