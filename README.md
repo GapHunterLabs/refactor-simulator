@@ -7,6 +7,13 @@ processors, never a custom engine — and shows a full impact report,
 deterministic validation, and a native side-by-side diff before
 anything touches a real file.
 
+![Refactor Simulator: Preview a rename's full impact, and run the tests it affects, before anything touches your code](docs/media/hero.gif)
+
+Each feature on its own:
+[Simulate a rename](docs/media/01-simulate.gif) ·
+[Native diff](docs/media/02-diff.gif) ·
+[Run related tests (Pro)](docs/media/03-related-tests.gif)
+
 ## Why it exists
 
 Unlike the other 8 Gap Hunter Labs plugins, this one wasn't built from a
