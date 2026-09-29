@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- After Discard or Apply to Disk, the Refactor Simulator window kept the
+  previous simulation's checks and related tests on screen, and their
+  "Will run" button asked for a license even with Pro active. The window
+  now goes back to its empty state.
+
 ## [2026.2.1]
 
 ### Fixed
