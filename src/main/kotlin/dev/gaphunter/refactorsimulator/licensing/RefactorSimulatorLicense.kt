@@ -119,6 +119,9 @@ object RefactorSimulatorLicense {
      * interpretation of null is up to the caller.
      */
     fun isLicensed(): Boolean? {
+        // Always false in a published build: DevSandbox's working version is compiled only for local runIde
+        // sessions started with -PdevSandbox=true (see build.gradle.kts).
+        if (DevSandbox.isForced()) return true
         val facade = LicensingFacade.getInstance() ?: return null
         val cstamp = facade.getConfirmationStamp(PRODUCT_CODE) ?: return false
         return when {
