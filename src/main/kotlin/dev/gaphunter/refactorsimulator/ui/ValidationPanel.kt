@@ -85,6 +85,27 @@ class ValidationPanel : JBPanel<ValidationPanel>(GridLayout(1, 2, 12, 0)) {
         relatedTestsColumn.repaint()
     }
 
+    /**
+     * Back to the empty state, as after startup. Called when a simulation is discarded or applied: before this, the
+     * last simulation's checks and related tests stayed on screen, "Will run" included, pointing at a result that no
+     * longer existed.
+     */
+    fun clear() {
+        validationColumn.removeAll()
+        relatedTestsColumn.removeAll()
+        showEmpty()
+        revalidate()
+        repaint()
+    }
+
+    /** What the panel shows, as plain text lines (tests read it; nothing else depends on it). */
+    internal fun shownTexts(): List<String> = listOf(validationColumn, relatedTestsColumn).flatMap { column ->
+        column.components.flatMap { c ->
+            val inner = (c as? JPanel)?.components?.toList() ?: listOf(c)
+            inner.mapNotNull { (it as? JBLabel)?.text ?: (it as? JButton)?.text }
+        }
+    }
+
     private fun showEmpty() {
         validationColumn.add(wrappingLabel("Validation"))
         relatedTestsColumn.add(wrappingLabel("Related Tests"))

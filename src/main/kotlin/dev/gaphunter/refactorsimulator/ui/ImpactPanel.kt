@@ -105,8 +105,9 @@ class ImpactPanel(private val project: Project) : JBPanel<ImpactPanel>(BorderLay
      * license was revoked between render and click.
      */
     private fun onWillRun(testFilePath: String) {
-        val result = currentResult
-        if (result == null || RefactorSimulatorLicense.isLicensed() != true) {
+        // No simulation on screen (discarded or applied): nothing to run -- and no reason to ask for a license.
+        val result = currentResult ?: return
+        if (RefactorSimulatorLicense.isLicensed() != true) {
             RefactorSimulatorLicense.requestLicense("Running related tests in an isolated sandbox is part of Refactor Simulator Pro.")
             return
         }
@@ -181,6 +182,7 @@ class ImpactPanel(private val project: Project) : JBPanel<ImpactPanel>(BorderLay
         summaryRow.removeAll()
         summaryRow.revalidate()
         summaryRow.repaint()
+        validationPanel.clear()
         setButtonsEnabled(false)
     }
 
