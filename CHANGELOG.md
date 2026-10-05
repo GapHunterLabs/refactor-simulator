@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [2026.2.3]
+
+### Fixed
+
+- **Running a related test no longer risks freezing the IDE.** The module
+  and file lookups before a run used a blocking read action on a background
+  thread, which can hold up the editor while it waits. They now use a
+  non-blocking read action that steps aside for edits and stops as soon as
+  the run is cancelled.
+
 ## [2026.2.2]
 
 ### Fixed

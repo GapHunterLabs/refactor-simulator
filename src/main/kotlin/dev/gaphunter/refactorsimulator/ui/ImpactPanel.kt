@@ -1,7 +1,7 @@
 package dev.gaphunter.refactorsimulator.ui
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.util.Computable
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.module.ModuleUtilCore
@@ -29,6 +29,7 @@ import dev.gaphunter.refactorsimulator.testimpact.TestRunSummary
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import java.nio.file.Path
+import java.util.concurrent.Callable
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JButton
@@ -115,12 +116,15 @@ class ImpactPanel(private val project: Project) : JBPanel<ImpactPanel>(BorderLay
         object : Task.Backgroundable(project, "Running related test", true) {
             override fun run(indicator: ProgressIndicator) {
                 // Module/file lookups and PSI reads need read access; the run itself happens outside it.
-                val (moduleSourceRoots, overrides, gradle) = ApplicationManager.getApplication().runReadAction(
-                    Computable<Triple<Map<String, Path>, Map<String, String>, GradleTestRequest?>> {
+                // Non-blocking: a pending write cancels and restarts this read instead of waiting behind it
+                // (a blocking read on a background thread can freeze the UI). The lookups are read-only, so a
+                // restart is safe; cancelling the task cancels the read through the indicator.
+                val (moduleSourceRoots, overrides, gradle) = ReadAction.nonBlocking(
+                    Callable<Triple<Map<String, Path>, Map<String, String>, GradleTestRequest?>> {
                         val roots = ModuleSourceRootResolver.resolveModuleSourceRoots(result, project)
                         Triple(roots, ModuleSourceRootResolver.buildOverrides(result, project, roots), gradleRequest(result, testFilePath))
                     },
-                )
+                ).wrapProgress(indicator).executeSynchronously()
                 val outcomes = testRunner.runRelatedTests(moduleSourceRoots, overrides, gradle)
                 val testName = testFilePath.substringAfterLast('/').substringAfterLast('\\')
 
