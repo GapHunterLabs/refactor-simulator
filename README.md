@@ -137,10 +137,18 @@ run" disabled — nothing else in the plugin is gated.
   silently-incomplete impact report is worse than declining the action
   for a few seconds.
 
-## Enterprise / Team Licensing
+## Buying for a team
 
-Need enterprise features, custom refactoring rules, or team licensing?
-Contact us at **gaphunterlabs@gmail.com**.
+Pro licenses, for one developer or a whole team, are sold only through
+JetBrains Marketplace: open the [Pricing tab](https://plugins.jetbrains.com/plugin/33204-refactor-simulator/pricing) on the plugin's
+page. JetBrains Marketplace handles checkout and license management.
+
+## Support
+
+- **Bugs and feature requests:** [GitHub Issues](https://github.com/GapHunterLabs/refactor-simulator/issues)
+- **Questions, or custom rules for a team's codebase:** **gaphunterlabs@gmail.com**
+- **Security vulnerabilities:** report privately as described in [SECURITY.md](SECURITY.md), not in a public issue.
+- **Privacy and network behavior:** [PRIVACY.md](PRIVACY.md)
 
 ## Development
 
