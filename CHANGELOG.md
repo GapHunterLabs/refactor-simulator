@@ -201,7 +201,8 @@
   ships Rename only.
 - MOVE refactoring isn't planned for v0.1 at all — see KNOWN_ISSUES.md.
 
-[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.2.2...HEAD
+[Unreleased]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.2.3...HEAD
+[2026.2.3]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.2.2...2026.2.3
 [2026.2.2]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.2.1...2026.2.2
 [2026.2.1]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.2.0...2026.2.1
 [2026.2.0]: https://github.com/GapHunterLabs/refactor-simulator/compare/2026.1.2...2026.2.0
