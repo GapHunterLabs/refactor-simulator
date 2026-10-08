@@ -93,3 +93,11 @@ if (devSandbox) {
         jvmArgs("-Drefactorsimulator.pro.dev=true")
     }
 }
+
+// Third-party notices: the licenses of the bundled open-source libraries, including the full Apache License 2.0
+// text that section 4 of that license requires with every copy, travel inside the plugin jar.
+tasks.named<Jar>("jar") {
+    from("THIRD-PARTY-NOTICES.txt") {
+        into("META-INF")
+    }
+}
