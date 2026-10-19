@@ -68,10 +68,14 @@ and reserved keywords are rejected before simulation even runs, via
 the same `LanguageNamesValidation` the platform's own rename dialog
 uses.
 
-**Extract Variable:** select an expression in the editor first, then
+**Extract Variable (Pro):** select an expression in the editor first, then
 **Simulate Refactor...** — the same entry point detects the selection
 and offers extracting it into a new `var`/`val` instead. Works for
-both Java and Kotlin.
+both Java and Kotlin. Part of Refactor Simulator Pro since version
+2026.3.0; it was free before, and any installation that runs version
+2026.3.0 or later before November 2, 2026 keeps it without a license
+(the plugin records the first day it ran in the IDE's local settings to
+know that).
 
 The **Refactor Simulator** tool window (right-hand side) shows:
 
@@ -83,9 +87,9 @@ The **Refactor Simulator** tool window (right-hand side) shows:
   simulation already built).
 - **Show Diff / Apply to Disk / Discard.**
 
-**Free, forever:** simulation, the full Impact Summary, the Validation
-Report, the native diff, listing related test files, and Apply/Discard
-— all of it, no paywall on any of the above.
+**Free, forever:** simulating a rename, the full Impact Summary, the
+Validation Report, the native diff, listing related test files, and
+Apply/Discard — all of it, no paywall on any of the above.
 
 **Pro (Freemium, as of 0.3.0):** actually *executing* the related tests
 — clicking "Will run" runs that test class against an isolated copy of

@@ -1,6 +1,6 @@
 # Privacy Policy — Refactor Simulator
 
-**Effective date:** 2026-10-06
+**Effective date:** 2026-10-19
 
 Refactor Simulator is a Gap Hunter Labs plugin for IntelliJ Platform IDEs.
 This policy is short because the plugin's design makes it short: there
@@ -17,6 +17,10 @@ telemetry, no crash reports, no personally identifiable information.
 To decide when to show its one-time rating prompt, the plugin keeps two values
 in the IDE's own settings on your computer: how many findings it has shown and
 whether you have answered the prompt. Neither is ever sent anywhere.
+
+The plugin also keeps the date it first ran in your IDE (version 2026.3.0 or
+later). It uses that date only to know whether this installation keeps
+Extract Variable simulation without a license, and never sends it anywhere.
 
 ## Network access
 

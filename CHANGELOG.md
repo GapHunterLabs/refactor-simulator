@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [2026.3.0]
+
+### Changed
+
+- **Simulating Extract Variable is now part of Refactor Simulator Pro.**
+  Any installation that runs this version or a later one before November 2,
+  2026 keeps it without a license. Simulating a rename, the impact and
+  validation reports, the diff, the related-test list and Apply/Discard stay
+  free.
+- The plugin description lists the free and the Pro features separately.
+
 ## [2026.2.4]
 
 ### Fixed

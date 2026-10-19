@@ -4,17 +4,23 @@
     <name>Refactor Simulator</name>
     <vendor>Gap Hunter Labs</vendor>
     <description><![CDATA[
-        <p>Preview every refactoring before committing it. Simulates a rename or
-        extract refactor in an isolated in-memory sandbox — using IntelliJ's own
-        PSI and refactoring APIs, never a custom engine — and shows a full impact
-        report, validation results, and a side-by-side diff before anything
-        touches a real file.</p>
-        <p>Unlike the native preview dialog, everything stays isolated until you
-        explicitly choose Apply to Disk. Discard leaves the project exactly as it
-        was — no exceptions.</p>
-        <p>Free. No AI, no confidence scores, no probabilistic heuristics — every
-        reported number comes directly from Find Usages and IntelliJ's own
-        refactoring processors.</p>
+        <p>Preview a refactoring's full impact before it touches your code. Refactor Simulator runs a rename on an in-memory copy, using the IDE's own refactoring engine, and shows the impact, the validation results and a side-by-side diff. Nothing is written until you click Apply to Disk.</p>
+        <p><b>Free</b></p>
+        <ul>
+          <li><b>Simulate a rename</b> in Java and Kotlin, from the editor's context menu or the Refactor menu.</li>
+          <li><b>Impact Summary:</b> files affected, total changes, imports and references.</li>
+          <li><b>Validation Report:</b> code parsed, imports resolved, naming collisions and compilation conflicts.</li>
+          <li><b>Native side-by-side diff</b>, then <b>Apply to Disk</b> or <b>Discard</b>. Discard leaves the project exactly as it was.</li>
+          <li><b>Related Tests:</b> every test file that references the renamed code.</li>
+          <li><b>Deterministic:</b> every number comes from Find Usages and the platform's refactoring processors, with no confidence scores or guesswork.</li>
+        </ul>
+        <p><b>Refactor Simulator Pro</b> (paid, with a free trial)</p>
+        <ul>
+          <li><b>Run the related tests before you apply:</b> each test runs against an isolated copy of the project with the simulated change applied, and the real project is never touched. Gradle projects run only the owning test class through the Gradle Tooling API; Maven projects run through your Maven installation or the one bundled with IntelliJ IDEA.</li>
+          <li><b>Simulate Extract Variable:</b> select an expression, and see the new variable, the impact and the diff before anything is written.</li>
+        </ul>
+        <p>Simulating Extract Variable was free before version 2026.3.0. Any installation that runs version 2026.3.0 or later before November 2, 2026 keeps it without a license.</p>
+        <p><a href="https://github.com/GapHunterLabs/refactor-simulator">Documentation</a> · <a href="https://github.com/GapHunterLabs/refactor-simulator/issues">Report an issue</a></p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -23,8 +29,9 @@
 
     <!-- Freemium: PRODUCT_CODE assigned by JetBrains 2026-08-06 after
          enrolling in Marketplace Monetization. optional="true" means the
-         plugin still installs and works fully for free; only "Will run"
-         on a Related Test is gated, via RefactorSimulatorLicense.isLicensed().
+         plugin still installs and works for free; "Will run" on a Related
+         Test and, since 2026.3.0, simulating Extract Variable are gated
+         (ProGate, with LegacyFreeFeatures for installations that had it).
          Plugin version migrated from SemVer (0.3.0) to YYYY.Minor.Patch
          (2026.1.0) on 2026-08-11: three release-version values tried
          against 0.3.0 ("03"/"30"/"003") all failed verifyPlugin, and a
@@ -33,11 +40,10 @@
          matching beginning" (see KNOWN_ISSUES.md). Same fix already
          proven on ansible-companion/api-security-companion/openapi-companion:
          release-version's leading digits must match the plugin
-         version's leading digits.
-         Stays fixed as long as the plugin version starts with "2026.1",
-         never touched again after this release without re-reading
-         KNOWN_ISSUES.md first. -->
-    <product-descriptor code="PREFACTORSIMULA" release-date="20260926" release-version="20262" optional="true"/>
+         version's leading digits (20263 pairs with 2026.3.x), and a new
+         release-version needs a release-date no earlier release used.
+         Read KNOWN_ISSUES.md before changing either value. -->
+    <product-descriptor code="PREFACTORSIMULA" release-date="20261019" release-version="20263" optional="true"/>
 
     <actions>
         <group id="RefactorSimulator.Actions" text="Refactor Simulator" popup="true">
@@ -61,6 +67,7 @@
                     anchor="right"
                     icon="/icons/toolWindow.svg"
                     factoryClass="dev.gaphunter.refactorsimulator.ui.ImpactToolWindowFactory"/>
+        <postStartupActivity implementation="dev.gaphunter.refactorsimulator.licensing.FirstSeenStartupActivity"/>
     </extensions>
 
     <!-- Without this, the whole plugin silently fails to load under the Kotlin

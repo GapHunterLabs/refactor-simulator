@@ -11,6 +11,8 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.util.PsiTreeUtil
+import dev.gaphunter.refactorsimulator.licensing.ProGate
+import dev.gaphunter.refactorsimulator.licensing.RefactorSimulatorLicense
 import dev.gaphunter.refactorsimulator.refactor.ExtractVariableTarget
 import dev.gaphunter.refactorsimulator.testimpact.RelatedTestFinder
 import dev.gaphunter.refactorsimulator.ui.ImpactToolWindowFactory
@@ -18,8 +20,9 @@ import dev.gaphunter.refactorsimulator.ui.ImpactToolWindowFactory
 /**
  * Editor context-menu + Refactor-menu entry point. A non-empty editor
  * selection that resolves to a real expression ([ExtractVariableTarget])
- * routes to Extract Variable; otherwise this falls back to the original
- * rename-at-caret behavior below, unchanged. Checking selection first
+ * routes to Extract Variable (Pro since 2026.3.0, see [ProGate]); otherwise
+ * this falls back to the original rename-at-caret behavior below,
+ * unchanged. Checking selection first
  * means an accidental drag-selection over an identifier the user meant
  * to rename never silently changes which refactor gets simulated --
  * the two targets can't both resolve at once (rename needs a bare
@@ -62,6 +65,12 @@ class SimulateRefactorAction : AnAction() {
 
         val extractTarget = findExtractVariableTarget(e)
         if (extractTarget != null) {
+            if (!ProGate.allowsMovedFeatures()) {
+                RefactorSimulatorLicense.requestLicense(
+                    "Simulating Extract Variable is part of Refactor Simulator Pro. Simulating a rename stays free.",
+                )
+                return
+            }
             val dialog = SimulateExtractVariableDialog(project, extractTarget)
             if (!dialog.showAndGet()) return
             val session = dialog.session ?: return
