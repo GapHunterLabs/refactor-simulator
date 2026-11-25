@@ -16,15 +16,7 @@ Each feature on its own:
 
 ## Why it exists
 
-Unlike the other 8 Gap Hunter Labs plugins, this one wasn't built from a
-documented backlog of real competitor reviews. A quick evidence check
-(2026-07-28) confirmed there's no direct competitor with real,
-citable paid-tier complaints in this exact space — refactor previews
-already exist natively in IntelliJ, and the closest paid product found
-(Parasoft Jtest) is an unrelated enterprise test-impact-analysis suite
-that runs tests *after* a change is applied, not a pre-commit
-simulation. This is an original idea, not market-validated the way the
-other 8 plugins were — treat it accordingly.
+Most plugins in this catalog started from a documented backlog of real competitor reviews; this one did not. An evidence check on 2026-07-28 found no direct competitor with real, citable paid-tier complaints in this exact space: refactor previews already exist natively in IntelliJ, and the closest paid product I found (Parasoft Jtest) is an unrelated enterprise test-impact-analysis suite that runs tests *after* a change is applied, not a pre-commit simulation. This is an original idea, not validated by the market the way the review-driven plugins were: treat it accordingly.
 
 ## Core principles
 
